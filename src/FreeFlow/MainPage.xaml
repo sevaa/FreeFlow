@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:FreeFlow"
+             x:Class="FreeFlow.MainPage">
+
+    <StackLayout>
+        <!-- Place new controls here -->
+        <Label Text="CapOne 608" HorizontalOptions="Center"/>
+        <ListView x:Name="TheList" HorizontalOptions="FillAndExpand" ItemSelected="OnXactSelected">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <local:XactCell Amount="{Binding Amount}" Desc="{Binding Desc}" Balance="{Binding Balance}" When="{Binding When}" />
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackLayout>
+
+</ContentPage>

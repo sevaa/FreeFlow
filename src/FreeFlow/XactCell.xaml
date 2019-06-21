@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ViewCell xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="FreeFlow.XactCell">
+  <ViewCell.View>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+
+            <BoxView x:Name="bLeft" WidthRequest="5" HeightRequest="20"/>
+            <Label x:Name="lWhen" FontSize="Small" VerticalOptions="Center" Grid.Column="1"/>
+            <Label x:Name="lDesc" Grid.Column="2" />
+            <Label x:Name="lAmount" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="3"/>
+            <Label x:Name="lBalance" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="4"/>
+        </Grid>
+  </ViewCell.View>
+</ViewCell>

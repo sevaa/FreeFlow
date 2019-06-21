@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="FreeFlow.XactDetails">
+    <ContentPage.Content>
+        <StackLayout>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0">Date:</Label>
+                <Label Grid.Row="0" Grid.Column="1" x:Name="lDate"/>
+                <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="lDesc"/>
+                <Label Grid.Row="2" Grid.Column="0">Amount:</Label>
+                <Label Grid.Row="2" Grid.Column="1" x:Name="lAmount"/>
+            </Grid>
+            <StackLayout Orientation="Horizontal" x:Name="lCreateRec">
+                <Button Text="Recurs weekly" Clicked="OnCreateWeeklyRecurrence" x:Name="bCreateWeeklyRec"/>
+                <Button Text="Recurs monthly" Clicked="OnCreateMonthlyRecurrence" x:Name="bCreateMonthlyRec"/>
+            </StackLayout>
+            
+            <Button Text="Delete the recurrence" Clicked="OnDeleteRecurrence" x:Name="bDeleteRec"/>
+
+            <StackLayout x:Name="gRecHeader">
+                <Label>Description starts with:</Label>
+                <Editor x:Name="eRecDesc"/>
+                <Label>Amount:</Label>
+                <Editor x:Name="eRecAmount"/>
+            </StackLayout>
+
+            <StackLayout x:Name="gWeeklyRecDetails">
+                <StackLayout Orientation="Horizontal">
+                    <Label>Recurs every</Label>
+                    <Editor x:Name="eWeekCount" IsReadOnly="true"/>
+                    <Stepper Minimum="1" Maximum="8" Increment="1" x:Name="sWeekCount" />
+                    <Label>week(s),</Label>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal">
+                    <Label>starting on</Label>
+                    <Editor x:Name="eWeeklyStartDate" TextChanged="OnWeeklyStartDateChanged"/>
+                    <Label x:Name="lDayOfWeek"/>
+                </StackLayout>
+            </StackLayout>
+            
+            <Grid x:Name="gMonthlyRecDetails">
+                <StackLayout Orientation="Horizontal">
+                    <Label>Recurs every</Label>
+                    <Editor x:Name="eMonthCount" IsReadOnly="true"/>
+                    <Stepper Minimum="1" Maximum="8" Increment="1" x:Name="sMonthCount" />
+                    <Label>month(s),</Label>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal">
+                    <Label>starting on</Label>
+                    <Editor x:Name="eMonthlyStartDate"/>
+                </StackLayout>
+            </Grid>
+
+            <StackLayout Orientation="Horizontal">
+                <Button Clicked="OnSave" Text="Save"/>
+                <Button Clicked="OnCancel" Text="Cancel"/>
+            </StackLayout>
+
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>
