@@ -9,17 +9,19 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="22"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="80"/>
             </Grid.ColumnDefinitions>
 
-            <BoxView x:Name="bLeft" WidthRequest="5" HeightRequest="20"/>
+            <BoxView x:Name="bLeft" WidthRequest="5" HeightRequest="35"/>
             <Label x:Name="lWhen" FontSize="Small" VerticalOptions="Center" Grid.Column="1"/>
-            <Label x:Name="lDesc" Grid.Column="2" />
-            <Label x:Name="lAmount" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="3"/>
-            <Label x:Name="lBalance" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="4"/>
+            <Label x:Name="lRepeat" Grid.Column="2">🔁</Label>
+            <Label x:Name="lDesc" Grid.Column="3" />
+            <Label x:Name="lAmount" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="4"/>
+            <Label x:Name="lBalance" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="5"/>
         </Grid>
   </ViewCell.View>
 </ViewCell>

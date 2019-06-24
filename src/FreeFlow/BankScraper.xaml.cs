@@ -59,7 +59,7 @@ namespace FreeFlow
 
         private void Login()
         {
-            TheWeb.EvaluateJavaScriptAsync("new function(){var e = document.getElementById(\"no-acct-uid\"); e.value=\"SevaAleks\"; var evt = new Event(\"change\"); e.dispatchEvent(evt); e = document.getElementById(\"no-acct-pw\"); e.value=\"BlueCard215\"; evt = new Event(\"change\"); e.dispatchEvent(evt);document.getElementById(\"no-acct-submit\").click();}()");
+            TheWeb.EvaluateJavaScriptAsync("new function(){var e = document.getElementById(\"no-acct-uid\"); e.value=\"SevaAleks\"; var evt = new Event(\"change\"); e.dispatchEvent(evt); e = document.getElementById(\"no-acct-pw\"); e.value=\"\"; evt = new Event(\"change\"); e.dispatchEvent(evt);document.getElementById(\"no-acct-submit\").click();}()");
         }
 
         private async void ListAccounts()

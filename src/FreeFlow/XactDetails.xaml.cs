@@ -72,7 +72,7 @@ namespace FreeFlow
 
             m_RecType = RecurrenceType.Monthly;
             eMonthCount.Text = "1";
-            eWeeklyStartDate.Text = m_Xact.When.ToString("MM/dd/yyyy");
+            eMonthlyStartDate.Text = m_Xact.When.ToString("MM/dd/yyyy");
         }
 
         private void OnSave(object sender, EventArgs e)

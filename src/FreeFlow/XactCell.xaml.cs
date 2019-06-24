@@ -62,12 +62,18 @@ namespace FreeFlow
         }
 
         //Deposit, Withdrawal, Projected deposit, Projected withdrawal
-        static private readonly Color[] s_Colors = new Color[]
+        static private readonly Color[] s_BarColors = new Color[]
         {
             new Color(20.0/255,160.0/255,20.0/255),
             new Color(0, 0, 0),
             new Color(166.0/255, 222.0/255,166.0/255),
             new Color(100.0/255, 100.0/255, 100.0/255)
+        };
+
+        static private readonly Color[] s_BalanceColors = new Color[]
+        {
+            new Color(0, 0, 0),
+            new Color(0.8, 0, 0)
         };
 
         protected override void OnBindingContextChanged()
@@ -80,7 +86,16 @@ namespace FreeFlow
                 lDesc.Text = Desc;
                 lAmount.Text = Amount.FormatAmount();
                 lBalance.Text = Balance.FormatBalance();
-                bLeft.Color = s_Colors[(IsProjected ? 2 : 0) + (Amount < 0 ? 1 : 0)];
+                bLeft.Color = s_BarColors[(IsProjected ? 2 : 0) + (Amount < 0 ? 1 : 0)];
+                lRepeat.IsVisible = IsRecurring;
+                lWhen.FontAttributes = 
+                    lAmount.FontAttributes = 
+                    lBalance.FontAttributes =
+                    lDesc.FontAttributes = IsProjected ? FontAttributes.Italic : FontAttributes.Bold;
+                lWhen.TextColor =
+                    lDesc.TextColor =
+                    lAmount.TextColor = s_BarColors[Amount < 0 ? 1 : 0];
+                lBalance.TextColor = s_BalanceColors[Balance >= 0 ? 0 : 1];
             }
         }
     }

@@ -10,7 +10,13 @@
         <ListView x:Name="TheList" HorizontalOptions="FillAndExpand" ItemSelected="OnXactSelected">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <local:XactCell Amount="{Binding Amount}" Desc="{Binding Desc}" Balance="{Binding Balance}" When="{Binding When}" />
+                    <local:XactCell
+                        Amount="{Binding Amount}"
+                        Desc="{Binding Desc}"
+                        Balance="{Binding Balance}"
+                        IsProjected="{Binding IsProjected}"
+                        IsRecurring="{Binding IsRecurring}"
+                        When="{Binding When}" />
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
