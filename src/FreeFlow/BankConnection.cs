@@ -4,11 +4,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Xamarin.Forms;
 
 namespace FreeFlow
 {
-    class BankConnection
+    public abstract class BankConnection
     {
-
+        public abstract BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, ScraperMode Mode);
     }
 }

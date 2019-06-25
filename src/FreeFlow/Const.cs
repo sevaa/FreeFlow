@@ -1,5 +1,6 @@
 ﻿namespace FreeFlow
 {
-    public enum RecurrenceType { Weekly, Monthly };
+    internal enum RecurrenceType { Weekly, Monthly };
     public enum Banks { CapitalOne };
+    public enum ScraperMode { Connect, GetStatement };
 }

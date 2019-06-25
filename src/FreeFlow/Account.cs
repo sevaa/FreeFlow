@@ -8,8 +8,9 @@ using System.Text;
 
 namespace FreeFlow
 {
-    public class Account
+    internal class Account
     {
+        private AccountReference m_Ref;
         private int m_IDGen;
         private List<Recurrence> m_Recurrences;
         private Xact[] m_Statement;
@@ -17,8 +18,14 @@ namespace FreeFlow
 
         public event Action RecurrencesChange;
 
-        public Account()
+        public Account(AccountReference Ref)
         {
+            m_Ref = Ref;
+            //Used for file naming - filename safe characters only
+            string AccountCode = string.Format("{0}-{1}",
+                Enum.GetName(typeof(Banks), Ref.Bank),
+                Ref.Code);
+
             //Load the recurrences
             string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             m_RecFile = Path.Combine(LocalData, "rec.json");
@@ -47,10 +54,15 @@ namespace FreeFlow
 
         #region Recurrence editing
 
+        internal Recurrence FindRecurrence(int RecurrenceID)
+        {
+            return m_Recurrences.Find(r => r.ID == RecurrenceID);
+        }
+
         internal void DeleteRecurrence(int RecurrenceID)
         {
             Recurrence Rec;
-            if ((Rec = m_Recurrences.Find(r => r.ID == RecurrenceID)) == null)
+            if ((Rec = FindRecurrence(RecurrenceID)) == null)
                 return;
 
             m_Recurrences.Remove(Rec);
@@ -61,35 +73,33 @@ namespace FreeFlow
 
         private void SaveRecurrences()
         {
-            string s;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                new DataContractJsonSerializer(typeof(List<Recurrence>)).WriteObject(ms, m_Recurrences);
-                s = new UTF8Encoding(false).GetString(ms.GetBuffer(), 0, (int)ms.Length);
-            }
-            File.WriteAllText(m_RecFile, s);
-        }
-        internal void UpdateMonthlyRecurrence(int RecurrenceID, string Desc, decimal Amount, int MonthCount, DateTime StartDate)
-        {
-            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
-            {
-                Rec.Interval = MonthCount;
-                Rec.StartDate = StartDate;
-            });
+            JSON.Save(m_RecFile, m_Recurrences);
         }
 
-        internal void UpdateWeeklyRecurrence(int RecurrenceID, string Desc, decimal Amount, int WeekCount, DateTime StartDate)
+        internal void UpdateRecurrence(Recurrence Rec, int PrevRecurrenceID)
         {
-            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
+            if (Rec.ID == 0) //Newly created one
             {
-                Rec.Interval = WeekCount;
-                Rec.StartDate = StartDate;
-            });
+                if(PrevRecurrenceID != 0) //Replacing a deleted one - happens if they click Delete and then Create
+                {
+                    Recurrence PrevRec;
+                    if ((PrevRec = FindRecurrence(PrevRecurrenceID)) != null)
+                        m_Recurrences.Remove(PrevRec);
+                }
+                Rec.ID = ++m_IDGen;
+                m_Recurrences.Add(Rec);
+            }
+            //else the fields in the existing recurrence were already updated
+            //TODO: check for dirtiness, recalculate only if changed?
+
+            SaveRecurrences();
+            if (RecurrencesChange != null)
+                RecurrencesChange();
         }
 
         #endregion
 
-        #region Implementation
+        #region Recurrence implementation
 
         private void ClearRecurrenceMatches()
         {
@@ -97,6 +107,7 @@ namespace FreeFlow
             {
                 x.IsRecurring = false;
                 x.RecurrenceID = 0;
+                x.Nickname = null;
             }
         }
 
@@ -107,38 +118,10 @@ namespace FreeFlow
             if (Xacts.Length > 0)
             {
                 int OrdGen = 0;
-                DateTime EndDate = Xacts[0].When, StartDate = Xacts[Xacts.Length - 1].When;
-                DateTime EndOfFuture = EndDate + LookForward;
                 List<Xact> Projections = new List<Xact>();
 
                 foreach (Recurrence Rec in m_Recurrences)
-                {
-                    int Tolerance = Rec.Type == RecurrenceType.Weekly && Rec.Interval == 1 ? 1 : 2;
-                    DateTime EndDateWithTolerance = EndDate + TimeSpan.FromDays(Tolerance);
-                    for (DateTime dt = Rec.StartDate; dt < EndOfFuture; dt = Next(Rec, dt))
-                    {
-                        Xact MatchInStatement;
-                        if ((MatchInStatement = FindMatchInStatement(Rec, dt, Tolerance)) != null)
-                        {
-                            MatchInStatement.IsRecurring = true;
-                            MatchInStatement.RecurrenceID = Rec.ID;
-                        }
-                        else if(dt >= EndDateWithTolerance)
-                        {
-                            Projections.Add(new Xact()
-                            {
-                                Amount = Rec.Amount,
-                                Desc = Rec.XactDesc,
-                                When = dt,
-                                IsProjected = true,
-                                IsRecurring = true,
-                                RecurrenceID = Rec.ID,
-                                Ordinal = OrdGen++
-                            });
-                        }
-                    }
-
-                }
+                    ApplyRecurrence(Rec, Projections, ref OrdGen, LookForward);
 
                 Xact[] aProjections = Projections.ToArray();
                 Array.Sort(aProjections, Xact.Compare);
@@ -149,51 +132,68 @@ namespace FreeFlow
                 return Xacts;
         }
 
-        private void UpdateRecurrence(int RecurrenceID, string Desc, decimal Amount, Action<Recurrence> SaveSchedule)
+        private void ApplyRecurrence(Recurrence Rec, List<Xact> Projections, ref int OrdGen, TimeSpan LookForward)
         {
-            Recurrence Rec;
-            if (RecurrenceID == 0)
+            DateTime EndDate = m_Statement[0].When;
+            DateTime EndOfFuture = EndDate + LookForward;
+
+            TimeSpan Tolerance = TimeSpan.FromDays(Rec.Type == RecurrenceType.Weekly && Rec.Interval == 1 ? 1 : 2);
+            DateTime EndDateWithTolerance = EndDate + Tolerance;
+            int i = 0;
+            DateTime dt;
+            Xact MatchInStatement;
+            for (dt = Rec.StartDate; dt < EndOfFuture; dt = GetScheduledDate(Rec, i++))
             {
-                Rec = new Recurrence()
+                if ((MatchInStatement = FindMatchInStatement(Rec, dt, Tolerance)) != null)
                 {
-                    ID = ++m_IDGen,
-                    Type = RecurrenceType.Weekly,
-                    XactDesc = Desc,
-                    Amount = Amount
-                };
-                SaveSchedule(Rec);
-                m_Recurrences.Add(Rec);
+                    MatchInStatement.IsRecurring = true;
+                    MatchInStatement.RecurrenceID = Rec.ID;
+                    MatchInStatement.Nickname = Rec.Nickname;
+                }
+                else if (dt >= EndDateWithTolerance)
+                {
+                    Projections.Add(new Xact()
+                    {
+                        Amount = Rec.Amount,
+                        Desc = Rec.XactDesc,
+                        When = dt,
+                        IsProjected = true,
+                        IsRecurring = true,
+                        RecurrenceID = Rec.ID,
+                        Ordinal = OrdGen++,
+                        Nickname = Rec.Nickname
+                    });
+                }
             }
-            else
+
+            //Off chance that we have to run the schedule back
+            DateTime StartDateWithTolerance = m_Statement[m_Statement.Length - 1].When - Tolerance;
+            if (Rec.StartDate > StartDateWithTolerance)
             {
-                
-                if ((Rec = m_Recurrences.Find(r => r.ID == RecurrenceID)) == null)
-                    return;
-
-                Rec.XactDesc = Desc;
-                Rec.Amount = Amount;
-                SaveSchedule(Rec);
+                for(i = -1; (dt = GetScheduledDate(Rec, i)) > StartDateWithTolerance; --i)
+                    if ((MatchInStatement = FindMatchInStatement(Rec, dt, Tolerance)) != null)
+                    {
+                        MatchInStatement.IsRecurring = true;
+                        MatchInStatement.RecurrenceID = Rec.ID;
+                        MatchInStatement.Nickname = Rec.Nickname;
+                    }
             }
-
-            SaveRecurrences();
-            if (RecurrencesChange != null)
-                RecurrencesChange();
         }
 
-        private Xact FindMatchInStatement(Recurrence Rec, DateTime dt, int Tolerance)
+        private Xact FindMatchInStatement(Recurrence Rec, DateTime dt, TimeSpan Tolerance)
         {
-            TimeSpan ToleranceSpan = TimeSpan.FromDays(Tolerance);
+            TimeSpan ToleranceSpan = Tolerance;
             DateTime From = dt.Subtract(ToleranceSpan),
                 To = dt.Add(ToleranceSpan);
-            return m_Statement.FirstOrDefault(x => x.Desc.StartsWith(Rec.XactDesc) && x.When > From && x.When <= To);
+            return m_Statement.FirstOrDefault(x => x.Desc.StartsWith(Rec.XactDesc) && x.When >= From && x.When <= To);
         }
 
-        private DateTime Next(Recurrence Rec, DateTime dt)
+        private DateTime GetScheduledDate(Recurrence Rec, int i)
         {
             if (Rec.Type == RecurrenceType.Weekly)
-                return dt.AddDays(7 * Rec.Interval);
+                return Rec.StartDate.AddDays(i * 7 * Rec.Interval);
             else if (Rec.Type == RecurrenceType.Monthly)
-                return dt.AddMonths(Rec.Interval);
+                return Rec.StartDate.AddMonths(i * Rec.Interval);
             else
                 return default(DateTime);
         }

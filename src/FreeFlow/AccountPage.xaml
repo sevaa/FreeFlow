@@ -2,20 +2,14 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:FreeFlow"
-             x:Class="FreeFlow.MainPage">
+             x:Class="FreeFlow.AccountPage">
 
     <StackLayout>
-        <Label Text="CapOne 608" HorizontalOptions="Center"/>
+        <Label x:Name="lMessage" IsVisible="false" HorizontalOptions="Center"/>
         <ListView x:Name="TheList" HorizontalOptions="FillAndExpand" ItemSelected="OnXactSelected">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <local:XactCell
-                        Amount="{Binding Amount}"
-                        Desc="{Binding Desc}"
-                        Balance="{Binding Balance}"
-                        IsProjected="{Binding IsProjected}"
-                        IsRecurring="{Binding IsRecurring}"
-                        When="{Binding When}" />
+                    <local:XactCell />
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

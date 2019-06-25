@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FreeFlow
 {
-    public class Xact
+    internal class Xact
     {
         // Deposits are positive, withdrawals are negative
         public decimal Amount { get; set; }
@@ -19,8 +19,9 @@ namespace FreeFlow
         public bool IsRecurring { get; set; }
 
         public int RecurrenceID;
+        public string Nickname;
 
-        //Date - new above old, deposite above withdrawals, then retain the source order
+        //Date - new above old, deposits above withdrawals, then retain the source order
         public static int Compare(Xact l, Xact r)
         {
             if (l.When > r.When || (l.When == r.When && ((l.Amount > 0 && r.Amount < 0) || l.Ordinal < r.Ordinal)))

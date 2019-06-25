@@ -16,19 +16,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="BankScraper.xaml.cs">
-      <DependentUpon>BankScraper.xaml</DependentUpon>
+    <Compile Update="BankScraperPage.xaml.cs">
+      <DependentUpon>BankScraperPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="AccountPage.xaml.cs">
+      <DependentUpon>AccountPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="XactDetailsPage.xaml.cs">
+      <DependentUpon>XactDetailsPage.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="BankScraper.xaml">
+    <EmbeddedResource Update="BankScraperPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="WelcomePage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="XactCell.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="XactDetails.xaml">
+    <EmbeddedResource Update="XactDetailsPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>

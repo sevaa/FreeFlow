@@ -4,7 +4,7 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             x:Class="FreeFlow.XactDetails">
+             x:Class="FreeFlow.XactDetailsPage">
     <ContentPage.Content>
         <StackLayout>
             <Grid>
@@ -35,9 +35,11 @@
                 <Editor x:Name="eRecDesc"/>
                 <Label>Amount:</Label>
                 <Editor x:Name="eRecAmount"/>
+                <Label>Nickname:</Label>
+                <Editor x:Name="eRecNickname"/>
             </StackLayout>
 
-            <StackLayout x:Name="gWeeklyRecDetails">
+            <StackLayout x:Name="gWeeklyRecDetails" IsVisible="False">
                 <StackLayout Orientation="Horizontal">
                     <Label>Recurs every</Label>
                     <Editor x:Name="eWeekCount" IsReadOnly="true"/>
@@ -51,7 +53,7 @@
                 </StackLayout>
             </StackLayout>
             
-            <StackLayout x:Name="gMonthlyRecDetails">
+            <StackLayout x:Name="gMonthlyRecDetails" IsVisible="False">
                 <StackLayout Orientation="Horizontal">
                     <Label>Recurs every</Label>
                     <Editor x:Name="eMonthCount" IsReadOnly="true"/>
@@ -63,12 +65,6 @@
                     <Editor x:Name="eMonthlyStartDate"/>
                 </StackLayout>
             </StackLayout>
-
-            <StackLayout Orientation="Horizontal">
-                <Button Clicked="OnSave" Text="Save"/>
-                <Button Clicked="OnCancel" Text="Cancel"/>
-            </StackLayout>
-
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

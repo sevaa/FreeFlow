@@ -1,5 +1,4 @@
-﻿using FreeFlow.BankAdapter;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -15,15 +14,15 @@ namespace FreeFlow
     // Learn more about making custom code visible in the Xamarin.Forms previewer
     // by visiting https://aka.ms/xamarinforms-previewer
     [DesignTimeVisible(true)]
-    public partial class MainPage : ContentPage
+    public partial class AccountPage : ContentPage
     {
         private Account m_Account;
 
-        public MainPage()
+        public AccountPage(AccountReference Ref)
         {
             InitializeComponent();
 
-            m_Account = new Account();
+            m_Account = new Account(Ref);
             m_Account.RecurrencesChange += OnRecurrencesChange;
 
             //Navigation.PushModalAsync(new BankScraper());
@@ -39,7 +38,7 @@ namespace FreeFlow
         private void OnXactSelected(object sender, SelectedItemChangedEventArgs e)
         {
             if(e.SelectedItem != null)
-                Navigation.PushModalAsync(new XactDetails(m_Account, e.SelectedItem as Xact), true);
+                Navigation.PushAsync(new XactDetailsPage(m_Account, e.SelectedItem as Xact), true);
         }
     }
 }
