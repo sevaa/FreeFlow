@@ -100,7 +100,7 @@ namespace FreeFlow
                     if (!DateTimeUtil.TryParseMDY(eMonthlyStartDate.Text, out dt))
                         return; //TODO: feedback
 
-                    m_Acct.UpdateMonthlyRecurrence(m_Xact.RecurrenceID, Desc, Amount, 0, default(DateTime));
+                    m_Acct.UpdateMonthlyRecurrence(m_Xact.RecurrenceID, Desc, Amount, (int)sMonthCount.Value, dt);
                 }
             }
             else if (m_Xact.RecurrenceID > 0)
@@ -123,6 +123,16 @@ namespace FreeFlow
             {
                 lDayOfWeek.Text = dt.ToString(", dddd");
             }
+        }
+
+        private void OnWeeklyIntervalStep(object sender, ValueChangedEventArgs e)
+        {
+            eWeekCount.Text = Convert.ToInt32(sWeekCount.Value).ToString();
+        }
+
+        private void OnMonthlyIntervalStep(object sender, ValueChangedEventArgs e)
+        {
+            eMonthCount.Text = Convert.ToInt32(sMonthCount.Value).ToString();
         }
     }
 }

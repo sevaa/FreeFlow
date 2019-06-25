@@ -5,7 +5,6 @@
              x:Class="FreeFlow.MainPage">
 
     <StackLayout>
-        <!-- Place new controls here -->
         <Label Text="CapOne 608" HorizontalOptions="Center"/>
         <ListView x:Name="TheList" HorizontalOptions="FillAndExpand" ItemSelected="OnXactSelected">
             <ListView.ItemTemplate>

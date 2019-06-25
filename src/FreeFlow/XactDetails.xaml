@@ -41,7 +41,7 @@
                 <StackLayout Orientation="Horizontal">
                     <Label>Recurs every</Label>
                     <Editor x:Name="eWeekCount" IsReadOnly="true"/>
-                    <Stepper Minimum="1" Maximum="8" Increment="1" x:Name="sWeekCount" />
+                    <Stepper Minimum="1" Maximum="8" Increment="1" x:Name="sWeekCount" ValueChanged="OnWeeklyIntervalStep" />
                     <Label>week(s),</Label>
                 </StackLayout>
                 <StackLayout Orientation="Horizontal">
@@ -51,18 +51,18 @@
                 </StackLayout>
             </StackLayout>
             
-            <Grid x:Name="gMonthlyRecDetails">
+            <StackLayout x:Name="gMonthlyRecDetails">
                 <StackLayout Orientation="Horizontal">
                     <Label>Recurs every</Label>
                     <Editor x:Name="eMonthCount" IsReadOnly="true"/>
-                    <Stepper Minimum="1" Maximum="8" Increment="1" x:Name="sMonthCount" />
+                    <Stepper Minimum="1" Maximum="12" Increment="1" x:Name="sMonthCount"  ValueChanged="OnMonthlyIntervalStep" />
                     <Label>month(s),</Label>
                 </StackLayout>
                 <StackLayout Orientation="Horizontal">
                     <Label>starting on</Label>
                     <Editor x:Name="eMonthlyStartDate"/>
                 </StackLayout>
-            </Grid>
+            </StackLayout>
 
             <StackLayout Orientation="Horizontal">
                 <Button Clicked="OnSave" Text="Save"/>

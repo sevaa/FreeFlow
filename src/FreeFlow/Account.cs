@@ -41,8 +41,11 @@ namespace FreeFlow
 
         public Xact[] Xacts()
         {
+            ClearRecurrenceMatches();
             return ApplyRecurrences(m_Statement, TimeSpan.FromDays(31));
         }
+
+        #region Recurrence editing
 
         internal void DeleteRecurrence(int RecurrenceID)
         {
@@ -66,8 +69,36 @@ namespace FreeFlow
             }
             File.WriteAllText(m_RecFile, s);
         }
+        internal void UpdateMonthlyRecurrence(int RecurrenceID, string Desc, decimal Amount, int MonthCount, DateTime StartDate)
+        {
+            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
+            {
+                Rec.Interval = MonthCount;
+                Rec.StartDate = StartDate;
+            });
+        }
+
+        internal void UpdateWeeklyRecurrence(int RecurrenceID, string Desc, decimal Amount, int WeekCount, DateTime StartDate)
+        {
+            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
+            {
+                Rec.Interval = WeekCount;
+                Rec.StartDate = StartDate;
+            });
+        }
+
+        #endregion
 
         #region Implementation
+
+        private void ClearRecurrenceMatches()
+        {
+            foreach (Xact x in m_Statement)
+            {
+                x.IsRecurring = false;
+                x.RecurrenceID = 0;
+            }
+        }
 
         //TODO: mark xacts in the statement as instances of the recurrence
         //Also work before the recurrence setup - not sure
@@ -86,7 +117,13 @@ namespace FreeFlow
                     DateTime EndDateWithTolerance = EndDate + TimeSpan.FromDays(Tolerance);
                     for (DateTime dt = Rec.StartDate; dt < EndOfFuture; dt = Next(Rec, dt))
                     {
-                        if (dt < EndOfFuture && (dt > EndDateWithTolerance || !CloseXactExists(Rec, dt, Xacts)))
+                        Xact MatchInStatement;
+                        if ((MatchInStatement = FindMatchInStatement(Rec, dt, Tolerance)) != null)
+                        {
+                            MatchInStatement.IsRecurring = true;
+                            MatchInStatement.RecurrenceID = Rec.ID;
+                        }
+                        else if(dt >= EndDateWithTolerance)
                         {
                             Projections.Add(new Xact()
                             {
@@ -112,26 +149,8 @@ namespace FreeFlow
                 return Xacts;
         }
 
-        internal void UpdateMonthlyRecurrence(int RecurrenceID, string Desc, decimal Amount, int MonthCount, DateTime StartDate)
+        private void UpdateRecurrence(int RecurrenceID, string Desc, decimal Amount, Action<Recurrence> SaveSchedule)
         {
-            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
-            {
-                Rec.Interval = MonthCount;
-                Rec.StartDate = StartDate;
-            }); 
-        }
-
-        internal void UpdateWeeklyRecurrence(int RecurrenceID, string Desc, decimal Amount, int WeekCount, DateTime StartDate)
-        {
-            UpdateRecurrence(RecurrenceID, Desc, Amount, Rec =>
-            {
-                Rec.Interval = WeekCount;
-                Rec.StartDate = StartDate;
-            });
-        }
-
-         private void UpdateRecurrence(int RecurrenceID, string Desc, decimal Amount, Action<Recurrence> SaveSchedule)
-         {
             Recurrence Rec;
             if (RecurrenceID == 0)
             {
@@ -161,9 +180,12 @@ namespace FreeFlow
                 RecurrencesChange();
         }
 
-        private bool CloseXactExists(Recurrence Rec, DateTime dt, Xact[] Xacts)
+        private Xact FindMatchInStatement(Recurrence Rec, DateTime dt, int Tolerance)
         {
-            return false;
+            TimeSpan ToleranceSpan = TimeSpan.FromDays(Tolerance);
+            DateTime From = dt.Subtract(ToleranceSpan),
+                To = dt.Add(ToleranceSpan);
+            return m_Statement.FirstOrDefault(x => x.Desc.StartsWith(Rec.XactDesc) && x.When > From && x.When <= To);
         }
 
         private DateTime Next(Recurrence Rec, DateTime dt)

@@ -17,11 +17,11 @@
             </Grid.ColumnDefinitions>
 
             <BoxView x:Name="bLeft" WidthRequest="5" HeightRequest="35"/>
-            <Label x:Name="lWhen" FontSize="Small" VerticalOptions="Center" Grid.Column="1"/>
-            <Label x:Name="lRepeat" Grid.Column="2">🔁</Label>
-            <Label x:Name="lDesc" Grid.Column="3" />
-            <Label x:Name="lAmount" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="4"/>
-            <Label x:Name="lBalance" HorizontalOptions="End" FontAttributes="Bold" Grid.Column="5"/>
+            <Label x:Name="lWhen" FontSize="Micro" VerticalOptions="Center" Grid.Column="1"/>
+            <Label x:Name="lRepeat" Grid.Column="2" VerticalOptions="Center">🔁</Label>
+            <Label x:Name="lDesc" Grid.Column="3" VerticalOptions="Center"/>
+            <Label x:Name="lAmount" HorizontalOptions="End" Grid.Column="4" VerticalOptions="Center"/>
+            <Label x:Name="lBalance" HorizontalOptions="End" Grid.Column="5" VerticalOptions="Center"/>
         </Grid>
   </ViewCell.View>
 </ViewCell>
