@@ -14,7 +14,9 @@ namespace FreeFlow.Bank
     {
         private class Driver: BankScraperDriver
         {
+            //TODO: after a failed login with cached credentials, don't retry with the same
             bool m_bRequestedAcctList = false, m_bGotAcctList = false;
+            decimal m_Balance;
 
             public Driver(BankScraperPage ScraperPage, ScraperMode Mode)
                 :base(Banks.CapitalOne, ScraperPage, Mode)
@@ -77,6 +79,7 @@ namespace FreeFlow.Bank
                 [DataMember] public string id { get; set; }
                 [DataMember] public string no { get; set; }
                 [DataMember] public string title { get; set; }
+                [DataMember] public string balance { get; set; }
 
                 override public string ToString()
                 {
@@ -86,7 +89,13 @@ namespace FreeFlow.Bank
 
             private async void ListAccounts()
             {
-                string s = await RunJS("new function(){return JSON.stringify([].slice.call(document.getElementById(\"summaryParent\").children,0).map(function(li){return {id:li.id, title:li.getElementsByTagName(\"h2\").item(0).innerText, no:li.getElementsByClassName(\"accnumbertrail\").item(0).innerText};}));}();");
+                string s = await RunJS("[].slice.call(document.getElementById(\"summaryParent\").children,0)"+
+                    ".map(function(li){return {"+
+                        "id:li.id, "+
+                        "title:li.getElementsByTagName(\"h2\").item(0).innerText, "+
+                        "no:li.getElementsByClassName(\"accnumbertrail\").item(0).innerText," +
+                        "balance:li.getElementsByTagName(\"localized-currency\").item(0).getElementsByClassName(\"screen-reader-only\").item(0).innerText};})");
+
                 List<WebAccount> WebAccounts;
                 using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(s)))
                     WebAccounts = new DataContractJsonSerializer(typeof(List<WebAccount>)).ReadObject(ms) as List<WebAccount>;
