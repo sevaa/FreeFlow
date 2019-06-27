@@ -15,12 +15,13 @@ namespace FreeFlow.Bank
         private class Driver: BankScraperDriver
         {
             //TODO: after a failed login with cached credentials, don't retry with the same
-            bool m_bRequestedAcctList = false, m_bGotAcctList = false;
-            decimal m_Balance;
+            private decimal m_Balance;
+            private AccountReference m_AccountRef;
 
-            public Driver(BankScraperPage ScraperPage, ScraperMode Mode)
+            public Driver(BankScraperPage ScraperPage, ScraperMode Mode, AccountReference Ref = null)
                 :base(Banks.CapitalOne, ScraperPage, Mode)
             {
+                m_AccountRef = Ref;
             }
 
             override public string InitialURL()
@@ -35,7 +36,7 @@ namespace FreeFlow.Bank
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
                 {
                     m_ScraperPage.MessageOff();
-                    Device.StartTimer(TimeSpan.FromMilliseconds(100), WatchForAccounts);
+                    PollForJavaScript("document.getElementById(\"summaryParent\") != null", ListAccounts);
                 }
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/accountSummary"))
                     ListAccounts();
@@ -51,30 +52,10 @@ namespace FreeFlow.Bank
                     m_ScraperPage.DisplayMessage("Please sign in to your account(s).");
             }
 
-            private bool WatchForAccounts()
-            {
-                if (!m_bRequestedAcctList && !m_bGotAcctList)
-                {
-                    m_bRequestedAcctList = true;
-                    RunJS("document.getElementById(\"summaryParent\") != null").ContinueWith(OnAcctListProbe);
-                }
-                return !m_bGotAcctList;
-            }
-
-            private void OnAcctListProbe(Task<string> ts)
-            {
-                m_bRequestedAcctList = false;
-                if (ts.IsCompleted && ts.Result == "true")
-                {
-                    m_bGotAcctList = true;
-                    Device.BeginInvokeOnMainThread(ListAccounts);
-                }
-            }
-
             //Need ID, or would've used 
-            [DataContract]class WebAccount : AccountReference
+            [DataContract]class WebAccount
             {
-                public WebAccount() { }
+                public WebAccount() {}
 
                 [DataMember] public string id { get; set; }
                 [DataMember] public string no { get; set; }
@@ -100,7 +81,7 @@ namespace FreeFlow.Bank
                 using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(s)))
                     WebAccounts = new DataContractJsonSerializer(typeof(List<WebAccount>)).ReadObject(ms) as List<WebAccount>;
 
-                if(WebAccounts == null || WebAccounts.Count == 0)
+                if (WebAccounts == null || WebAccounts.Count == 0)
                 {
                     m_ScraperPage.DisplayMessage("No accounts found, sorry. Probably app/website miscommunication, please contact support.");
                     return;
@@ -108,31 +89,68 @@ namespace FreeFlow.Bank
 
                 if (m_Mode == ScraperMode.Connect)
                 {
-                    //TODO: if a lot of accounts, inconvenient
-                    string[] AcctNames = WebAccounts.Select(wa => wa.ToString()).ToArray();
-                    string ActionResult = await m_ScraperPage.DisplayActionSheet("Select an account", "Cancel", null, AcctNames);
-                    if (ActionResult == "Cancel")
-                        m_ScraperPage.Navigation.PopModalAsync();
-                    else
-                    {
-                        int i = Array.FindIndex(AcctNames, an => an == ActionResult);
-                        WebAccount TheWebAcct = WebAccounts[i];
-                        (App.Current as App).RegisterAccount(m_Bank, TheWebAcct.title, TheWebAcct.no.Substring(3));
-                    }
+                    Navigation.PushModalAsync(
+                        new AccountSelectionPage(
+                            WebAccounts.Select(wa => new AccountReference()
+                            {
+                                Nickname = wa.ToString(),
+                                Code = wa.ToString(),
+                                Bank = Banks.CapitalOne,
+                                ExtraData = wa
+                            }), OnAccountSelection));
                 }
                 else if(m_Mode == ScraperMode.GetStatement)
                 {
-
+                    WebAccount TheAcct = WebAccounts.FirstOrDefault(wa => wa.ToString() == m_AccountRef.Code);
+                    if (TheAcct == null)
+                        m_ScraperPage.DisplayMessage("The selected account was not found on the page. This could be a bank/scraper miscommunication, please contact support.");
+                    else
+                    {
+                        m_Balance = decimal.Parse(TheAcct.balance.Replace(",", "").Replace("$",""));
+                        ProceedToStatement(TheAcct.id);
+                    }
                 }
+            }
 
+            //We know we're in connect mode. In
+            private void OnAccountSelection(AccountReference Ref)
+            {
+                if (Ref == null) //Cancel
+                    Navigation.PopModalAsync();
+                else
+                {
+                    WebAccount TheAcct = Ref.ExtraData as WebAccount;
+                    m_Balance = decimal.Parse(TheAcct.balance.Replace(",", ""));
+                    m_AccountRef = Ref;
+                    (App.Current as App).RegisterAccount(Ref);
+                    ProceedToStatement(TheAcct.id);
+                }
+            }
 
-
+            private void ProceedToStatement(string id)
+            {
+                RunJS("document.getElementById(\"" + id + "\").click()");
+                PollForJavaScript("document.getElementById(\"downloadStatementTransactions\") != null", () =>
+                {
+                    RunJS("document.getElementById(\"downloadStatementTransactions\").click()");
+                    PollForJavaScript("document.getElementsByClassName(\"bank-downloads-container\").length > 0", () =>
+                    {
+                        RunJS("if(!(\"XHRHooked\" in window)){"+
+                            "var oopen = window.XMLHttpRequest.prototype.open;"+
+                            "window.XMLHttpRequest.prototype.open = function(){"+
+                                    "this.addEventListener('load', function(a){window.location.href=\"http://callback/boohoo\";});oopen.apply(this, arguments);}"+
+                            "window.XHRHooked = true;};"+
+                            "document.getElementById(\"ease-dropdown-filter-fileTypeSelection\").value=\"CSV (Spreadsheet, Excel, Numbers)\";" +
+                            "document.getElementById(\"ease-dropdown-filter-dateTypeSelection\").value=\"90 days\";" +
+                            "document.getElementById(\"buttonBeginExport\").click();");
+                    });
+                });
             }
         }
 
-        public override BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, ScraperMode Mode)
+        public override BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, ScraperMode Mode, AccountReference Ref)
         {
-            return new Driver(ScraperPage, Mode);
+            return new Driver(ScraperPage, Mode, Ref);
         }
     }
 }

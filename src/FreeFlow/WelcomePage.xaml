@@ -5,7 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="FreeFlow.WelcomePage"
-             Title="FreeFlow">
+             Title="FreeFlow"
+             BackgroundColor="#ffffd0">
     <ContentPage.Content>
         <StackLayout VerticalOptions="Center" HorizontalOptions="Center">
             <Label Text="Welcome to FreeFlow!" HorizontalOptions="Center" FontSize="Large" Margin="0,0,0,2" />

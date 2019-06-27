@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
+using Xamarin.Forms.PlatformConfiguration;
 using Xamarin.Forms.Xaml;
 
 namespace FreeFlow
@@ -14,15 +15,20 @@ namespace FreeFlow
     {
         private BankScraperDriver m_Driver;
 
-        public BankScraperPage(BankConnection BankConn, ScraperMode Mode)
+        public BankScraperPage(BankConnection BankConn, ScraperMode Mode, AccountReference Ref = null)
         {
             InitializeComponent();
-            TheWeb.Source = BankConn.GetScraperDriver(this, Mode).InitialURL();
+            TheWeb.Source = BankConn.GetScraperDriver(this, Mode, Ref).InitialURL();
         }
 
         public void AddNavigatedHandler(EventHandler<WebNavigatedEventArgs> OnNavigated)
         {
             TheWeb.Navigated += OnNavigated;
+        }
+
+        public void AddNavigatingHandler(EventHandler<WebNavigatingEventArgs> OnNavigating)
+        {
+            TheWeb.Navigating += OnNavigating;
         }
 
         public Task<string> RunJS(string s)

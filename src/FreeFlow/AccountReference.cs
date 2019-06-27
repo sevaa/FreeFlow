@@ -10,5 +10,7 @@ namespace FreeFlow
         //Acct number or the last few digits - unique within a bank
         [DataMember] public string Code { get; set; }
         [DataMember] public string Nickname { get; set; }
+
+        public object ExtraData;
     }
 }

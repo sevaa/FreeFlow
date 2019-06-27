@@ -24,9 +24,6 @@ namespace FreeFlow
 
             m_Account = new Account(Ref);
             m_Account.RecurrencesChange += OnRecurrencesChange;
-
-            //Navigation.PushModalAsync(new BankScraper());
-
             TheList.ItemsSource = m_Account.Xacts();
         }
 
@@ -39,6 +36,12 @@ namespace FreeFlow
         {
             if(e.SelectedItem != null)
                 Navigation.PushAsync(new XactDetailsPage(m_Account, e.SelectedItem as Xact), true);
+        }
+
+        private void OnRefresh(object sender, EventArgs e)
+        {
+            AccountReference Ref = m_Account.Ref;
+            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Ref.Bank), ScraperMode.GetStatement, Ref));
         }
     }
 }

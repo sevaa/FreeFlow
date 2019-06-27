@@ -78,14 +78,9 @@ namespace FreeFlow
             return true; //TODO
         }
 
-        internal void RegisterAccount(Banks Bank, string Title, string No)
+        internal void RegisterAccount(AccountReference Ref)
         {
-            m_Config.Accounts = m_Config.Accounts.ArrayAppend(new AccountReference()
-            {
-                Bank = Bank,
-                Code = Title + "-" + No,
-                Nickname = Title + "-" + No
-            });
+            m_Config.Accounts = m_Config.Accounts.ArrayAppend(Ref);
             SaveConfig();
         }
     }

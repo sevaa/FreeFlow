@@ -7,7 +7,7 @@ using Xamarin.Forms;
 
 namespace FreeFlow
 {
-    abstract public class BankScraperDriver
+    abstract public partial class BankScraperDriver
     {
         protected Banks m_Bank;
         protected BankScraperPage m_ScraperPage;
@@ -18,17 +18,33 @@ namespace FreeFlow
             m_Bank = Bank;
             m_ScraperPage = ScraperPage;
             m_ScraperPage.AddNavigatedHandler(OnNavigated);
+            m_ScraperPage.AddNavigatingHandler(OnNavigating);
             m_Mode = Mode;
         }
 
         abstract public string InitialURL();
 
-        protected virtual void OnNavigated(object sender, WebNavigatedEventArgs e) { }
+        protected virtual void OnNavigated(object sender, WebNavigatedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("--- Navigated to " + e.Url);
+        }
 
-        protected Task<string> RunJS(string s)
+        protected virtual void OnNavigating(object sender, WebNavigatingEventArgs e)
+        {
+            Uri u = new Uri(e.Url);
+            if(u.Host == "callback")
+            {
+                System.Diagnostics.Debug.WriteLine("~~~ JS Noti: " + e.Url);
+                e.Cancel = true;
+            }
+        }
+
+        public Task<string> RunJS(string s)
         {
             return m_ScraperPage.RunJS(s);
         }
+
+        protected INavigation Navigation => m_ScraperPage.Navigation;
 
         //For single line strings
         protected string JSEncode(string s)
@@ -43,6 +59,11 @@ namespace FreeFlow
             string Username = await SecureStorage.GetAsync(BankName + "_Username");
             string Password = await SecureStorage.GetAsync(BankName + "_Password");
             return new string[] { Username, Password };
+        }
+
+        protected void PollForJavaScript(string TheScript, Action OnDone)
+        {
+            new TimedJavaScript(TheScript, OnDone, this);
         }
     }
 }

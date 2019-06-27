@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
 
@@ -16,7 +17,18 @@ namespace FreeFlow
         private Xact[] m_Statement;
         private string m_RecFile;
 
+        [DataContract]private class AccountSnapshot
+        {
+            public AccountSnapshot() { }
+
+            [DataMember] public Xact[] Statement { get; set; }
+            [DataMember] public decimal Balance { get; set; }
+            [DataMember] public DateTime When { get; set; }
+        }
+
         public event Action RecurrencesChange;
+
+        public AccountReference Ref => m_Ref;
 
         public Account(AccountReference Ref)
         {
@@ -28,6 +40,7 @@ namespace FreeFlow
 
             //Load the recurrences
             string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            //TODO: file naming
             m_RecFile = Path.Combine(LocalData, "rec.json");
             if (File.Exists(m_RecFile))
             {

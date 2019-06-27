@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="FreeFlow.AccountSelectionPage"
+             BackgroundColor="#000000"
+             Opacity="0.8"
+             >
+    <ContentPage.Content>
+        <Frame WidthRequest="300"
+               HeightRequest="400"
+               BackgroundColor="#ffffd0"
+               BorderColor="#000000"
+               HorizontalOptions="Center"
+               VerticalOptions="Center">
+            <StackLayout>
+                <Label>Select an account:</Label>
+                <ListView ItemSelected="OnSel" x:Name="TheList" HorizontalOptions="Fill">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextCell Text="{Binding Nickname}"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <Button Text="Cancel" Clicked="OnCancel" HorizontalOptions="Center"/>
+            </StackLayout>
+        </Frame>
+    </ContentPage.Content>
+</ContentPage>

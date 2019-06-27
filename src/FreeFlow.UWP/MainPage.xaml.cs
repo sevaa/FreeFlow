@@ -23,5 +23,10 @@ namespace FreeFlow.UWP
 
             LoadApplication(new FreeFlow.App());
         }
+
+        private void OnRefresh(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
