@@ -14,6 +14,22 @@ namespace FreeFlow.Bank
     {
         private class Driver: BankScraperDriver
         {
+            //For balance:
+
+            //https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accountdetail/getaccountbyid/K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D?productId=IM285&productType=DDA
+            //For savings: https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accountdetail/getaccountbyid/0wdAXQl4llJ4RLQwskUDcUKcLuD658WfvSr5pilZKfE%3D?productId=IM223&productType=SA
+
+
+            //https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accounts/K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D/transactions
+            //URLEncoded ID: K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D
+            //ID: account-K9F4/+8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L/m8=
+
+            //K9F4%252F+8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%252Fm8=
+
+            //Accounts summary:
+            // /ease-app-web/customer/accountsummary
+
+
             //TODO: after a failed login with cached credentials, don't retry with the same
             private decimal m_Balance;
             private AccountReference m_AccountRef;
@@ -33,6 +49,7 @@ namespace FreeFlow.Bank
             {
                 if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://www.capitalone.com/?id=bank&bank=ccb"))
                     Login();
+                /*
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
                 {
                     m_ScraperPage.MessageOff();
@@ -40,6 +57,40 @@ namespace FreeFlow.Bank
                 }
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/accountSummary"))
                     ListAccounts();
+                */
+            }
+
+            protected override async void OnNavigating(object sender, WebNavigatingEventArgs e)
+            {
+                base.OnNavigating(sender, e);
+
+                if (e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
+                    PollForJavaScript(
+                        "var f = function(){" +
+                        "if('_FF_' in window && 'o' in window._FF_)return true;"+
+                        "if(!('_FF_' in window))window._FF_ = {l:''};" +
+                        "var oopen = window.XMLHttpRequest.prototype.open;" +
+                        "window.XMLHttpRequest.prototype.open = function(){" +
+                            "window._FF_.o = true;" +
+                            "this._FF_url = arguments[1];" +
+                            "this.addEventListener('load', function(a){" +
+                                "var url = this._FF_url;"+
+                                "if(url.substring(0, 33) == '/ease-app-web/edge/Bank/accounts/' && url.substring(url.length - 13) == '/transactions')" +
+                                    "window._FF_.trans = this.responseText);" +
+                                "else if(url.substring(0, 53) =='/ease-app-web/edge/Bank/accountdetail/getaccountbyid/')" +
+                                    "window._FF_.summary = this.responseText);" +
+                                "else if(url == '/ease-app-web/customer/accountsummary')" +
+                                    "window._FF_.accounts = this.responseText);" +
+                            "}); " +
+                            "oopen.apply(this, arguments);" +
+                        "};" +
+                        "return false;" +
+                        "}; f()", OnHooked, 10);
+            }
+
+            private void OnHooked(string s)
+            {
+                PollForJavaScript("window._FF_.accounts", ListAccounts, 30);
             }
 
             private async void Login()
@@ -68,8 +119,9 @@ namespace FreeFlow.Bank
                 }
             }
 
-            private async void ListAccounts()
+            private async void ListAccounts(string s)
             {
+                /*
                 string s = await RunJS("[].slice.call(document.getElementById(\"summaryParent\").children,0)"+
                     ".map(function(li){return {"+
                         "id:li.id, "+
@@ -110,6 +162,7 @@ namespace FreeFlow.Bank
                         ProceedToStatement(TheAcct.id);
                     }
                 }
+                */
             }
 
             //We know we're in connect mode. In
@@ -130,6 +183,7 @@ namespace FreeFlow.Bank
             private void ProceedToStatement(string id)
             {
                 RunJS("document.getElementById(\"" + id + "\").click()");
+                /*
                 PollForJavaScript("document.getElementById(\"downloadStatementTransactions\") != null", () =>
                 {
                     RunJS("document.getElementById(\"downloadStatementTransactions\").click()");
@@ -145,6 +199,7 @@ namespace FreeFlow.Bank
                             "document.getElementById(\"buttonBeginExport\").click();");
                     });
                 });
+                */
             }
         }
 

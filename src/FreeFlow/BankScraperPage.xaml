@@ -3,13 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FreeFlow.BankScraperPage"
              BackgroundColor="#ffffd0">
-    <ContentPage.Content>
-        <StackLayout>
-            <Label x:Name="lMessage" IsVisible="false" FontAttributes="Bold" HorizontalOptions="StartAndExpand"/>
-            <WebView
-                x:Name="TheWeb"  
-                HorizontalOptions="FillAndExpand"
-                VerticalOptions="FillAndExpand"/>
-        </StackLayout>
-    </ContentPage.Content>
+    <StackLayout>
+        <Label x:Name="lMessage" IsVisible="false" FontAttributes="Bold" HorizontalOptions="StartAndExpand"/>
+        <WebView
+            x:Name="TheWeb"  
+            HorizontalOptions="FillAndExpand"
+            VerticalOptions="FillAndExpand"/>
+    </StackLayout>
 </ContentPage>

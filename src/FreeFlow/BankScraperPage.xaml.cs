@@ -46,5 +46,12 @@ namespace FreeFlow
         {
             lMessage.IsVisible = false;
         }
+
+        private async void OnDebug(object sender, EventArgs e)
+        {
+            string s = "window._FF_";
+            string r = await RunJS(s);
+            System.Diagnostics.Debug.WriteLine(r);
+        }
     }
 }

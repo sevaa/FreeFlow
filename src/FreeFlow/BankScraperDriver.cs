@@ -61,9 +61,9 @@ namespace FreeFlow
             return new string[] { Username, Password };
         }
 
-        protected void PollForJavaScript(string TheScript, Action OnDone)
+        protected void PollForJavaScript(string TheScript, Action<string> OnDone, int Period)
         {
-            new TimedJavaScript(TheScript, OnDone, this);
+            new TimedJavaScript(TheScript, OnDone, this, Period);
         }
     }
 }
