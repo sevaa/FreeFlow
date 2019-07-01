@@ -13,10 +13,16 @@ namespace FreeFlow
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class BankScraperPage : ContentPage
     {
-        public BankScraperPage(BankConnection BankConn, AccountReference Ref = null)
+        internal BankScraperPage(BankConnection BankConn, Account Acct = null)
         {
             InitializeComponent();
-            TheWeb.Source = BankConn.GetScraperDriver(this, Ref).InitialURL();
+            TheWeb.Source = BankConn.GetScraperDriver(this, Acct).InitialURL;
+        }
+
+        //Setting the source to a relative URL uses a bogus base
+        public void BrowseTo(string URL)
+        {
+            TheWeb.Source = new Uri(new Uri((TheWeb.Source as UrlWebViewSource).Url), URL).ToString();
         }
 
         public void AddNavigatedHandler(EventHandler<WebNavigatedEventArgs> OnNavigated)

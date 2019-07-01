@@ -14,7 +14,6 @@ namespace FreeFlow
         [DataContract] private class Config
         {
             public Config() { }
-
             [DataMember] public AccountReference[] Accounts { get; set; }
         }
 
@@ -24,8 +23,11 @@ namespace FreeFlow
         private string m_ConfigPath;
         private static readonly Dictionary<Banks, BankConnection> s_Banks = new Dictionary<Banks, BankConnection>()
         {
-            {Banks.CapitalOne, new Bank.CapOne()}
+            {Banks.CapitalOne, new Bank.CapOne()},
+            {Banks.BankOfAmerica, new Bank.BofA()}
         };
+
+        internal event Action<Account> AccountRegistered;
 
         public App()
         {
@@ -82,7 +84,12 @@ namespace FreeFlow
         {
             m_Config.Accounts = m_Config.Accounts.ArrayAppend(Ref);
             SaveConfig();
-            return new Account(Ref);
+            Account NewAccount = new Account(Ref);
+            if (AccountRegistered != null)
+                AccountRegistered(NewAccount);
+            return NewAccount;
         }
+
+        internal AccountReference DefaultAccount => m_Config.Accounts?[0];
     }
 }

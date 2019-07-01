@@ -52,6 +52,8 @@ namespace FreeFlow.UWP
 
                 Xamarin.Forms.Forms.Init(e);
 
+                Xamarin.Forms.DependencyService.Register<PlatformHelper>();
+
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
                     //TODO: Load state from previously suspended application
@@ -94,6 +96,15 @@ namespace FreeFlow.UWP
             var deferral = e.SuspendingOperation.GetDeferral();
             //TODO: Save application state and stop any background activity
             deferral.Complete();
+        }
+
+        public static string Version
+        {
+            get
+            {
+                PackageVersion v = Package.Current.Id.Version;
+                return string.Format("{0}.{1}.{2}", v.Major, v.Minor, v.Build);
+            }
         }
     }
 }

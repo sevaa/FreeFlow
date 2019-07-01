@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             BackgroundColor="#a0a0a0"
+             x:Class="FreeFlow.AboutPage">
+    <ContentPage.Content>
+        <Frame WidthRequest="300"
+            HeightRequest="400"
+            BackgroundColor="#ffffd0"
+            BorderColor="#000000"
+            HorizontalOptions="Center"
+            VerticalOptions="Center">
+            <StackLayout>
+                <Label FontAttributes="Bold" FontSize="Large">FreeFlow</Label>
+                <Label FontSize="Micro" x:Name="lVersion"/>
+                <Label>Your basic personal cash flow prediction app</Label>
+                <Label>Seva Alekseyev, 2019</Label>
+                <Button WidthRequest="180" Text="News on Facebook" Clicked="OnFB" Margin="0,10,0,0"/>
+                <Button WidthRequest="180" Text="Support" Clicked="OnSupport" Margin="0,3,0,0"/>
+                <Button VerticalOptions="End" WidthRequest="180" Text="Close" Clicked="OnClose" Margin="0,25,0,0"/>
+            </StackLayout>
+        </Frame>
+    </ContentPage.Content>
+</ContentPage>

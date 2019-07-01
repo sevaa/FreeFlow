@@ -18,18 +18,39 @@ namespace FreeFlow
     {
         private Account m_Account;
 
-        public AccountPage(AccountReference Ref)
+        internal AccountPage(AccountReference Ref)
         {
             InitializeComponent();
-
             m_Account = new Account(Ref);
-            m_Account.RecurrencesChange += OnRecurrencesChange;
-            TheList.ItemsSource = m_Account.Xacts();
+            Init();
         }
 
-        private void OnRecurrencesChange()
+        internal AccountPage(Account Acct)
+        {
+            InitializeComponent();
+            m_Account = Acct;
+            Init();
+        }
+
+        private void Init()
+        { 
+            m_Account.Change += OnAccountChange;
+            Title = m_Account.Ref.Nickname;
+            TheList.ItemsSource = m_Account.Xacts();
+            if (m_Account.NoRecurrences)
+                DisplayMessage("Tap on recurring transactions and define their recurrences.");
+        }
+
+        private void DisplayMessage(string s)
+        {
+            lMessage.Text = s;
+            lMessage.IsVisible = true;
+        }
+
+        private void OnAccountChange()
         {
             TheList.ItemsSource = m_Account.Xacts();
+            lMessage.IsVisible = m_Account.NoRecurrences;
         }
 
         private void OnXactSelected(object sender, SelectedItemChangedEventArgs e)
@@ -40,8 +61,30 @@ namespace FreeFlow
 
         private void OnRefresh(object sender, EventArgs e)
         {
-            AccountReference Ref = m_Account.Ref;
-            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Ref.Bank), Ref));
+            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(m_Account.Ref.Bank), m_Account));
+        }
+
+        private void OnAbout(object sender, EventArgs e)
+        {
+            Task t = Navigation.PushModalAsync(new AboutPage(), true);
+        }
+
+        private void OnMore(object sender, EventArgs e)
+        {
+            m_Account.SeeMore();
+        }
+
+        private void OnAddAccount(object sender, EventArgs e)
+        {
+            Task t = Navigation.PushModalAsync(
+                new AccountSelectionPage(new AccountReference[]
+                {
+                    new AccountReference(){Nickname="Boo"},
+                    new AccountReference(){Nickname="Hoo"},
+                    new AccountReference(){Nickname="Quu"}
+                }, null));
+            //TODO: bank selection
+            //await Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Banks.CapitalOne)));
         }
     }
 }

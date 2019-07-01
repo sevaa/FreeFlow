@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -14,46 +15,24 @@ namespace FreeFlow.Bank
     {
         private class Driver: BankScraperDriver
         {
-            //For balance:
-
-            //https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accountdetail/getaccountbyid/K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D?productId=IM285&productType=DDA
-            //For savings: https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accountdetail/getaccountbyid/0wdAXQl4llJ4RLQwskUDcUKcLuD658WfvSr5pilZKfE%3D?productId=IM223&productType=SA
-
-
-            //https://myaccounts.capitalone.com/ease-app-web/edge/Bank/accounts/K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D/transactions
-            //URLEncoded ID: K9F4%2F%2B8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%2Fm8%3D
-            //ID: account-K9F4/+8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L/m8=
-
-            //K9F4%252F+8WVcIOpnRL6Dnr0qwUYUQYGrzYiKwsTV6L%252Fm8=
-
-            //Accounts summary:
-            // /ease-app-web/customer/accountsummary
-
-
             //TODO: after a failed login with cached credentials, don't retry with the same
-            private AccountReference m_Account; //If null, we're trying to connect to an account for the first time
-
             public Driver(BankScraperPage ScraperPage, Account Acct = null)
-                :base(Banks.CapitalOne, ScraperPage)
+                :base(Banks.CapitalOne, ScraperPage, Acct)
             {
-                m_Account = Acct;
             }
 
-            override public string InitialURL()
-            {
-                return "https://www.capitalone.com/?id=bank&bank=ccb";
-            }
+            override public string InitialURL => "https://www.capitalone.com/?id=bank&bank=ccb";
 
             override protected void OnNavigated(object sender, WebNavigatedEventArgs e)
             {
-                System.Diagnostics.Debug.WriteLine("Nav to " + e.Url);
+                //System.Diagnostics.Debug.WriteLine("Nav to " + e.Url);
                 if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://www.capitalone.com/?id=bank&bank=ccb"))
                     Login();
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
                     m_ScraperPage.MessageOff();
             }
 
-            protected override async void OnNavigating(object sender, WebNavigatingEventArgs e)
+            protected override void OnNavigating(object sender, WebNavigatingEventArgs e)
             {
                 base.OnNavigating(sender, e);
 
@@ -61,22 +40,18 @@ namespace FreeFlow.Bank
                     PollForJavaScript(
                         "var f = function(){" +
                             "if('_FF_' in window && 'o' in window._FF_)return true;"+
-                            "if(!('_FF_' in window))window._FF_ = {l:'Started '};" +
+                            "if(!('_FF_' in window))window._FF_ = {};" +
                             "var oopen = window.XMLHttpRequest.prototype.open;" +
                             "window.XMLHttpRequest.prototype.open = function(){" +
                                 "window._FF_.o = true;" +
-                                "if(!('_FF_url' in this)){"+
+                                "if(!('_FF_url' in this) && arguments[1].substr(0, 14)=='/ease-app-web/'){" +
                                     "this._FF_url = arguments[1];" +
                                     "this.addEventListener('load', function(a){" +
                                         "var url = this._FF_url;" +
-                                        //"window._FF_.l += url + ' '"+
                                         "if(url.substr(0, 33) == '/ease-app-web/edge/Bank/accounts/' && url.substr(url.length - 13) == '/transactions')" +
                                             "window._FF_trans = this.responseText;" +
-                                        //"else if(url.substr(0, 53) =='/ease-app-web/edge/Bank/accountdetail/getaccountbyid/')" +
-                                            //"window._FF_summary = this.responseText;" +
                                         "else if(url == '/ease-app-web/customer/accountsummary')" +
                                             "window._FF_accounts = this.responseText;" +
-
                                     "});"+
                                 "}" +
                                 "oopen.apply(this, arguments);" +
@@ -85,14 +60,15 @@ namespace FreeFlow.Bank
                         "}; f()", OnHooked, 10);
             }
 
+            //Hooked the XHR, wait for the account list to come
             private void OnHooked(string s)
             {
                 PollForJavaScript("window._FF_accounts", ListAccounts, 10);
             }
 
+            //Navigated to the logon page - no credential saving for now.
             private async void Login()
             {
-                //Do we have cached credentials?
                 string[] Credentials = await GetCredentials();
                 if (!string.IsNullOrEmpty(Credentials[0]) && !string.IsNullOrEmpty(Credentials[1]))
                     RunJS("new function(){var e = document.getElementById(\"no-acct-uid\"); e.value=\"" + JSEncode(Credentials[0]) + "\"; var evt = new Event(\"change\"); e.dispatchEvent(evt); e = document.getElementById(\"no-acct-pw\"); e.value=\"" + JSEncode(Credentials[1]) + "\"; evt = new Event(\"change\"); e.dispatchEvent(evt);document.getElementById(\"no-acct-submit\").click();}()").Start();
@@ -100,128 +76,106 @@ namespace FreeFlow.Bank
                     m_ScraperPage.DisplayMessage("Please sign in to your account(s).");
             }
 
-            private async void ListAccounts(string s)
+            private void ListAccounts(string s)
             {
                 //There's a double-json bug somewhere in there...
                 s = s.Replace("\\n", "\n").Replace("\\\"", "\"");
+                base.ListAccounts(JSON.Parse<ScrapedAccounts>(s).accounts);
+            }
 
-                WebAccount[] Accounts = JSON.Parse<WebAccounts>(s).accounts;
-
-                if (Accounts == null || Accounts.Length == 0)
-                {
-                    m_ScraperPage.DisplayMessage("No accounts found, sorry. Probably app/website miscommunication, please contact support.");
-                    return;
-                }
-
-                if (m_Account == null) //Trying to connect to an account
-                {
-                    if(Accounts.Length == 1) //Exactly one
+            override protected void ProceedToStatement(IScrapedAccount Acct)
+            {
+                string id = (Acct as ScrapedAccount).referenceId;
+                PollForJavaScript("var f = function(){var e = document.getElementById('account-" + id + "');" +
+                    "if(e != null)e.click();"+
+                    "return e != null;}; f()", s =>
                     {
-                        OnAccountSelection(new AccountReference()
-                        {
-                            Nickname = Accounts[0].Nickname,
-                            Code = Accounts[0].accountNumberTLNPI,
-                            Bank = Banks.CapitalOne,
-                            ExtraData = Accounts[0]
-                        });
-                    }
-                    else
-                        Navigation.PushModalAsync(
-                            new AccountSelectionPage(
-                                Accounts.Select(wa => new AccountReference()
-                                {
-                                    Nickname = wa.Nickname,
-                                    Code = wa.accountNumberTLNPI,
-                                    Bank = Banks.CapitalOne,
-                                    ExtraData = wa
-                                }), OnAccountSelection));
-                }
-                else //Getting a statement for an existing account
-                {
-                    WebAccount TheAcct = Accounts.FirstOrDefault(wa => wa.accountNumberTLNPI == m_AccountRef.Code);
-                    if (TheAcct == null)
-                        m_ScraperPage.DisplayMessage("The selected account was not found on the page. This could be a bank/scraper miscommunication, please contact support.");
-                    else
-                        ProceedToStatement(TheAcct.referenceId);
-                }
-            }
-
-            //We know we're in connect mode. In
-            private void OnAccountSelection(AccountReference Ref)
-            {
-                if (Ref == null) //Cancel
-                    Navigation.PopModalAsync();
-                else
-                {
-                    WebAccount TheAcct = Ref.ExtraData as WebAccount;
-                    m_Account = (App.Current as App).RegisterAccount(Ref);
-                    ProceedToStatement(TheAcct.referenceId);
-                }
-            }
-
-            private void ProceedToStatement(string id)
-            {
-                RunJS("document.getElementById(\"account-" + id + "\").click()");
-                PollForJavaScript("window._FF_trans", OnTransactions, 10);
+                        PollForJavaScript("window._FF_trans", OnTransactions, 10);
+                    });
             }
 
             #region Capital One REST API data elements
 
-            [DataContract] class WebXact
+            [DataContract] class ScrapedXact
             {
-                public WebXact() { }
+                public ScrapedXact() { }
 
                 [DataContract] public class Overview
                 {
                     public Overview() { }
                     [DataMember] public string transactionDate { get; set; }
                     [DataMember] public string transactionTitle { get; set; }
+                    [DataMember] public decimal accountBalance { get; set; }
                 }
 
                 [DataMember] public string statementDescription { get; set; }
                 [DataMember] public decimal transactionTotalAmount { get; set; }
                 [DataMember] public Overview transactionOverview { get; set; }
-                public enum XactType { Debit, Credit};
-                [DataMember] public XactType debitCardType { get; set; }
+                [DataMember] public string debitCardType { get; set; } //Debit, Credit
+                [DataMember] public string transactionStatus { get; set; } //pending, posted
             }
 
-            [DataContract] class WebXacts
+            [DataContract] class ScrapedXacts
             {
-                public WebXacts() { }
+                public ScrapedXacts() { }
 
-                [DataMember] public WebXact [] posted { get; set; }
+                [DataMember] public ScrapedXact[] pending { get; set; }
+                [DataMember] public ScrapedXact [] posted { get; set; }
             }
 
             [DataContract]
-            class WebAccount
+            class ScrapedAccount : IScrapedAccount
             {
-                public WebAccount() { }
+                public ScrapedAccount() { }
                 [DataMember] public string displayName { get; set; }
                 [DataMember] public string referenceId { get; set; }
                 [DataMember] public string accountNumberTLNPI { get; set; }
 
                 public string Nickname => displayName + " (..." + accountNumberTLNPI.Substring(accountNumberTLNPI.Length - 3) + ")";
+                public string AccountNumber => accountNumberTLNPI;
             }
 
             [DataContract]
-            class WebAccounts
+            class ScrapedAccounts
             {
-                public WebAccounts() { }
+                public ScrapedAccounts() { }
 
-                [DataMember] public WebAccount[] accounts { get; set; }
+                [DataMember] public ScrapedAccount[] accounts { get; set; }
             }
             #endregion
 
+            //When the XHR hook catches the transactions REST call
             private void OnTransactions(string s)
             {
                 s = s.Replace("\\n", "\n").Replace("\\\"", "\"");
-                m_Account.OnDownloadedTransactions(JSON.Parse<WebXacts>(s).posted.Select(ToXact).ToArray());
+                ScrapedXacts Statement = JSON.Parse<ScrapedXacts>(s);
+                Xact [] Pending = Statement.pending.Select(ToXact).ToArray(),
+                    Posted = Statement.posted.Select(ToXact).ToArray();
+                Account.RunBalanceForward(Posted[0].Balance, Pending);
+
+                m_Account.OnDownloadedTransactions(Pending.ArrayConcat(Posted));
+                Navigation.PopModalAsync();
+            }
+
+            private Xact ToXact(ScrapedXact sx)
+            {
+                return new Xact()
+                {
+                    Amount = sx.debitCardType == "Credit" ? sx.transactionTotalAmount : -sx.transactionTotalAmount,
+                    Desc = sx.statementDescription.Trim(),
+                    When = DateTime.ParseExact(sx.transactionOverview.transactionDate.Split('T')[0], "yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    Balance = sx.transactionOverview.accountBalance,
+                    IsPending = sx.transactionStatus == "pending",
+                    IsProjected = false,
+                    IsRecurring = false,
+                    RecurrenceID = 0
+                };
             }
         }
 
-        public override BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, AccountReference Ref)
+        public override BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, Account Acct)
         {
-            return new Driver(ScraperPage, Ref);
+            return new Driver(ScraperPage, Acct);
         }
     }
 }

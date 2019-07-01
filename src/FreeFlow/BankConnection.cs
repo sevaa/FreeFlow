@@ -8,8 +8,8 @@ using Xamarin.Forms;
 
 namespace FreeFlow
 {
-    public abstract class BankConnection
+    internal abstract class BankConnection
     {
-        public abstract BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, AccountReference Ref);
+        public abstract BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, Account Acct = null);
     }
 }

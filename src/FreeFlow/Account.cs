@@ -12,11 +12,16 @@ namespace FreeFlow
     internal class Account
     {
         private AccountReference m_Ref;
-        private int m_IDGen;
-        private List<Recurrence> m_Recurrences;
+        private int m_RecurrenceIDGenerator;
+        private AccountSettings m_Settings;
         private Xact[] m_Statement;
-        private string m_AccountCode, m_RecFile, m_SnapshotFile;
+        private string m_AccountCode, m_SettingsFile, m_SnapshotFile;
+        private DateTime m_StatementDownloadDate;
+        private int m_Horizon = 31; //Look-ahead horizon
 
+        public event Action Change; //Fired for every event that changes the transaction list
+
+        #region Data file format
         [DataContract]private class AccountSnapshot
         {
             public AccountSnapshot() { }
@@ -25,50 +30,73 @@ namespace FreeFlow
             [DataMember] public DateTime When { get; set; }
         }
 
-        public event Action RecurrencesChange;
+        [DataContract] private class AccountSettings
+        {
+            public AccountSettings() { }
+
+            [DataMember] public List<Recurrence> Recurrences { get; set; }
+        }
+        #endregion
 
         public AccountReference Ref => m_Ref;
+
+        public bool NoRecurrences => m_Settings.Recurrences.Count == 0;
 
         public Account(AccountReference Ref)
         {
             m_Ref = Ref;
             //Used for file naming - filename safe characters only
             m_AccountCode = string.Format("{0}-{1}",
-                Enum.GetName(typeof(Banks), Ref.Bank), Ref.Code);
+                Enum.GetName(typeof(Banks), Ref.Bank), Ref.AccountNumber);
 
             m_SnapshotFile = Path.Combine(App.LocalData, m_AccountCode + "-Snapshot.json");
 
-            //Load the recurrences
-            //TODO: file naming
-            m_RecFile = Path.Combine(App.LocalData, "rec.json");
-            if (File.Exists(m_RecFile))
+            //Load the account settings
+            m_SettingsFile = Path.Combine(App.LocalData, m_AccountCode + "-Settings.json");
+            if (File.Exists(m_SettingsFile))
             {
-                string s = File.ReadAllText(m_RecFile);
-                m_Recurrences = JSON.Parse<List<Recurrence>>(s);
-                m_IDGen = m_Recurrences.Max(r => r.ID);
+                m_Settings = JSON.LoadParse<AccountSettings>(m_SettingsFile);
+                m_RecurrenceIDGenerator = m_Settings.Recurrences.Max(r => r.ID);
             }
             else
             {
-                m_Recurrences = new List<Recurrence>();
-                m_IDGen = 0;
+                m_Settings = new AccountSettings() { Recurrences = new List<Recurrence>() };
+                m_RecurrenceIDGenerator = 0;
             }
 
-            //Load the cached statement
-            m_Statement = GetCachedXacts();
+            //Load the snapshot
+            if (File.Exists(m_SnapshotFile))
+            {
+                AccountSnapshot Snapshot = JSON.LoadParse<AccountSnapshot>(m_SnapshotFile);
+                m_Statement = Snapshot.Statement;
+                m_StatementDownloadDate = Snapshot.When;
+            }
+            else
+            {
+                m_Statement = new Xact[0];
+                m_StatementDownloadDate = DateTime.Today;
+            }
         }
 
         //Interface for the account snapshot page
         public Xact[] Xacts()
         {
             ClearRecurrenceMatches();
-            return ApplyRecurrences(m_Statement, TimeSpan.FromDays(31));
+            return ApplyRecurrences(m_Statement, TimeSpan.FromDays(m_Horizon));
+        }
+
+        public void SeeMore()
+        {
+            m_Horizon += 30;
+            if (Change != null)
+                Change();
         }
 
         #region Recurrence editing
 
         internal Recurrence FindRecurrence(int RecurrenceID)
         {
-            return m_Recurrences.Find(r => r.ID == RecurrenceID);
+            return m_Settings.Recurrences.Find(r => r.ID == RecurrenceID);
         }
 
         internal void DeleteRecurrence(int RecurrenceID)
@@ -77,15 +105,15 @@ namespace FreeFlow
             if ((Rec = FindRecurrence(RecurrenceID)) == null)
                 return;
 
-            m_Recurrences.Remove(Rec);
-            SaveRecurrences();
-            if (RecurrencesChange != null)
-                RecurrencesChange();
+            m_Settings.Recurrences.Remove(Rec);
+            SaveSettings();
+            if (Change != null)
+                Change();
         }
 
-        private void SaveRecurrences()
+        private void SaveSettings()
         {
-            JSON.Save(m_RecFile, m_Recurrences);
+            JSON.Save(m_SettingsFile, m_Settings);
         }
 
         internal void UpdateRecurrence(Recurrence Rec, int PrevRecurrenceID)
@@ -96,17 +124,17 @@ namespace FreeFlow
                 {
                     Recurrence PrevRec;
                     if ((PrevRec = FindRecurrence(PrevRecurrenceID)) != null)
-                        m_Recurrences.Remove(PrevRec);
+                        m_Settings.Recurrences.Remove(PrevRec);
                 }
-                Rec.ID = ++m_IDGen;
-                m_Recurrences.Add(Rec);
+                Rec.ID = ++m_RecurrenceIDGenerator;
+                m_Settings.Recurrences.Add(Rec);
             }
             //else the fields in the existing recurrence were already updated
             //TODO: check for dirtiness, recalculate only if changed?
 
-            SaveRecurrences();
-            if (RecurrencesChange != null)
-                RecurrencesChange();
+            SaveSettings();
+            if (Change != null)
+                Change();
         }
 
         #endregion
@@ -132,7 +160,7 @@ namespace FreeFlow
                 int OrdGen = 0;
                 List<Xact> Projections = new List<Xact>();
 
-                foreach (Recurrence Rec in m_Recurrences)
+                foreach (Recurrence Rec in m_Settings.Recurrences)
                     ApplyRecurrence(Rec, Projections, ref OrdGen, LookForward);
 
                 Xact[] aProjections = Projections.ToArray();
@@ -219,7 +247,7 @@ namespace FreeFlow
             }
         }
 
-        private void RunBalanceForward(Decimal EndBalance, Xact[] a)
+        public static void RunBalanceForward(Decimal EndBalance, Xact[] a)
         {
             for(int i=a.Length-1;i>=0;--i)
                 EndBalance = a[i].Balance = EndBalance + a[i].Amount;
@@ -232,56 +260,18 @@ namespace FreeFlow
         {
             m_Statement = Xacts;
             SaveSnapshot();
-            if (RecurrencesChange != null)
-                RecurrencesChange();
+            if (Change != null)
+                Change();
         }
 
         private void SaveSnapshot()
         {
-            string AccountCode = string.Format("{0}-{1}-Snapshot.json",
-                Enum.GetName(typeof(Banks), Ref.Bank), Ref.Code);
-
             JSON.Save(m_SnapshotFile, new AccountSnapshot()
             {
                 Statement = m_Statement,
                 When = DateTime.Today
             });
         }
-        #endregion
-
-        //Capital One specific!!!
-        #region CapitalOne
-
-        public virtual Xact[] GetCachedXacts()
-        {
-            string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string s = File.ReadAllText(Path.Combine(LocalData, "balance.txt"));
-            Decimal EndBalance;
-            if (!Decimal.TryParse(s, out EndBalance))
-                return null;
-            s = File.ReadAllText(Path.Combine(LocalData, "stmt.txt"));
-            string[] Lines = s.Split('\n').Skip(1).Where(Line => !string.IsNullOrEmpty(Line.Trim())).ToArray();
-            Xact[] Xacts = Lines.Select(ParseXact).ToArray();
-            Array.Sort(Xacts, Xact.Compare);
-            RunBalanceBack(EndBalance, Xacts);
-            return Xacts;
-        }
-
-        private Xact ParseXact(string s, int i)
-        {
-            string[] a = s.Split(',');
-            return new Xact
-            {
-                Ordinal = i,
-                Amount = Decimal.Parse(a[1].Length > 0 ? a[1] : a[2]),
-                Desc = a[3].Trim(),
-                When = DateTime.ParseExact(a[4], "MM/dd/yy", CultureInfo.InvariantCulture),
-                IsPending = a[3].Trim().StartsWith("Memo"),
-                IsProjected = false
-            };
-        }
-
-
         #endregion
     }
 }

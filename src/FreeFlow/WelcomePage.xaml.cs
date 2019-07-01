@@ -17,11 +17,19 @@ namespace FreeFlow
             InitializeComponent();
         }
 
-        private async void OnBank(object sender, EventArgs e)
+        private void OnBank(object sender, EventArgs e)
         {
+            App TheApp = App.Current as App;
             Banks Bank = (Banks)int.Parse((sender as Button).CommandParameter as string);
-            BankScraperPage TheScraper = new BankScraperPage((App.Current as App).GetBankConnection(Bank));
-            await Navigation.PushModalAsync(TheScraper);
+            BankScraperPage TheScraper = new BankScraperPage(TheApp.GetBankConnection(Bank));
+            Task t = Navigation.PushModalAsync(TheScraper);
+            TheApp.AccountRegistered += OnConnected;
+        }
+
+        private void OnConnected(Account NewAcct)
+        {
+            Task t = Navigation.PushAsync(new AccountPage(NewAcct));
+            Navigation.RemovePage(this);
         }
     }
 }

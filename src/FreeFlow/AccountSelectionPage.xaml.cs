@@ -12,13 +12,13 @@ namespace FreeFlow
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class AccountSelectionPage : ContentPage
     {
-        private Action<AccountReference> m_SaveSelection;
         private AccountReference [] m_Accts;
+        private Action<AccountReference> m_OnDone;
 
-        public AccountSelectionPage(IEnumerable<AccountReference> Accts, Action<AccountReference> SaveSelection)
+        public AccountSelectionPage(IEnumerable<AccountReference> Accts, Action<AccountReference> OnDone)
         {
             m_Accts = Accts.ToArray();
-            m_SaveSelection = SaveSelection;
+            m_OnDone = OnDone;
             InitializeComponent();
             TheList.ItemsSource = m_Accts;
         }
@@ -28,7 +28,7 @@ namespace FreeFlow
         private void OnCancel(object sender, EventArgs e)
         {
             Navigation.PopModalAsync();
-            m_SaveSelection(null);
+            m_OnDone(null);
         }
 
         private void OnSel(object sender, SelectedItemChangedEventArgs e)
@@ -36,7 +36,7 @@ namespace FreeFlow
             if (e.SelectedItemIndex >= 0)
             {
                 Navigation.PopModalAsync();
-                m_SaveSelection(e.SelectedItem as AccountReference);
+                m_OnDone(e.SelectedItem as AccountReference);
             }
         }
     }

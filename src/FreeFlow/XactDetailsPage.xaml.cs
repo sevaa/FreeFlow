@@ -56,9 +56,12 @@ namespace FreeFlow
                 }
             }
 
-            lDate.Text = x.When.ToString("ddd, MMM d");
+            lHeader.Text = string.Format("{0} {1} of ${2} on {3:ddd, MMM d}",
+                x.IsProjected ? "Projected" : "Recorded",
+                x.Amount < 0 ? "withdrawal" : "deposit",
+                x.Amount < 0 ? -x.Amount : x.Amount,
+                x.When);
             lDesc.Text = x.Desc;
-            lAmount.Text = x.Amount.FormatAmount();
         }
 
         private void OnDeleteRecurrence(object sender, EventArgs e)

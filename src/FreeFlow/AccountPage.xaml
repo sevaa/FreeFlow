@@ -7,7 +7,7 @@
              BackgroundColor="#ffffd0">
 
     <StackLayout>
-        <Label x:Name="lMessage" IsVisible="false" HorizontalOptions="Center"/>
+        <Label x:Name="lMessage" IsVisible="false" HorizontalOptions="StartAndExpand" FontAttributes="Bold"/>
         <ListView x:Name="TheList" HorizontalOptions="FillAndExpand" ItemSelected="OnXactSelected">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -17,6 +17,11 @@
         </ListView>
     </StackLayout>
     <ContentPage.ToolbarItems>
+        <!--
+        <ToolbarItem Text="Add Account" Clicked="OnAddAccount"/>
+        -->
+        <ToolbarItem Text="More" Clicked="OnMore"/>
         <ToolbarItem Text="Refresh" Clicked="OnRefresh"/>
+        <ToolbarItem Text="About" Clicked="OnAbout"/>
     </ContentPage.ToolbarItems>
 </ContentPage>

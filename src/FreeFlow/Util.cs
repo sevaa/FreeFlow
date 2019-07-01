@@ -66,6 +66,7 @@ namespace FreeFlow
 
     static class JSON
     {
+        //UTF-8, no byte order mark
         static public readonly UTF8Encoding s_Encoding = new UTF8Encoding(false);
 
         internal static void Save<T>(string FileName, T Data)
@@ -85,6 +86,11 @@ namespace FreeFlow
                 s = s.Substring(6);
             using (MemoryStream ms = new MemoryStream(s_Encoding.GetBytes(s)))
                 return new DataContractJsonSerializer(typeof(T)).ReadObject(ms) as T;
+        }
+
+        public static T LoadParse<T>(string FileName) where T:class
+        {
+            return JSON.Parse<T>(File.ReadAllText(FileName));
         }
     }
 }

@@ -6,7 +6,7 @@ using Xamarin.Forms;
 
 namespace FreeFlow
 {
-    public abstract partial class BankScraperDriver
+    internal abstract partial class BankScraperDriver
     {
         internal class TimedJavaScript
         {

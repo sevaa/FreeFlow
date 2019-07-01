@@ -13,7 +13,8 @@
             <Label HorizontalOptions="Center">First, let's connect to your bank and download a statement.</Label>
             <Label HorizontalOptions="Center" Margin="0,0,0,4">The following banks are supported:</Label>
             
-            <Button WidthRequest="180" HorizontalOptions="Center" Text="Capital One" Clicked="OnBank" CommandParameter="0" />
+            <Button WidthRequest="180" HorizontalOptions="Center" Text="Capital One" Clicked="OnBank" CommandParameter="0" Margin="0,0,0,10"/>
+            <Button WidthRequest="180" HorizontalOptions="Center" Text="Bank of America" Clicked="OnBank" CommandParameter="1" />
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>
