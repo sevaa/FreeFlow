@@ -10,6 +10,6 @@ namespace FreeFlow
 {
     public abstract class BankConnection
     {
-        public abstract BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, ScraperMode Mode, AccountReference Ref);
+        public abstract BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, AccountReference Ref);
     }
 }

@@ -13,13 +13,17 @@ namespace FreeFlow
             private string m_TheJS;
             private bool m_bRequested = false, m_bGot = false;
             private Action<string> m_OnDone;
-            BankScraperDriver m_Driver;
+            private BankScraperDriver m_Driver;
+            private Predicate<string> m_Condition;
 
-            public TimedJavaScript(string TheJS, Action<string> OnDone, BankScraperDriver Driver, int Period)
+            public TimedJavaScript(string TheJS, Action<string> OnDone, BankScraperDriver Driver, int Period, Predicate<string> Condition)
             {
                 m_OnDone = OnDone;
                 m_TheJS = TheJS;
                 m_Driver = Driver;
+                if (Condition == null)
+                    Condition = s => !string.IsNullOrEmpty(s) && !"false".Equals(s);
+                m_Condition = Condition;
                 Device.StartTimer(TimeSpan.FromMilliseconds(Period), Request);
             }
 
@@ -38,8 +42,7 @@ namespace FreeFlow
                 m_bRequested = false;
                 System.Diagnostics.Debug.WriteLine("Poll :" + ts.Result ?? "(null)");
 
-
-                if (ts.IsCompleted && !string.IsNullOrEmpty(ts.Result) && !"false".Equals(ts.Result))
+                if (ts.IsCompleted && m_Condition(ts.Result))
                 {
                     m_bGot = true;
                     Device.BeginInvokeOnMainThread(() => m_OnDone(ts.Result));

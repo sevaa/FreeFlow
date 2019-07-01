@@ -41,7 +41,7 @@ namespace FreeFlow
         private void OnRefresh(object sender, EventArgs e)
         {
             AccountReference Ref = m_Account.Ref;
-            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Ref.Bank), ScraperMode.GetStatement, Ref));
+            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Ref.Bank), Ref));
         }
     }
 }

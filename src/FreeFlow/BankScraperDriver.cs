@@ -11,15 +11,13 @@ namespace FreeFlow
     {
         protected Banks m_Bank;
         protected BankScraperPage m_ScraperPage;
-        protected ScraperMode m_Mode;
 
-        protected BankScraperDriver(Banks Bank, BankScraperPage ScraperPage, ScraperMode Mode)
+        protected BankScraperDriver(Banks Bank, BankScraperPage ScraperPage)
         {
             m_Bank = Bank;
             m_ScraperPage = ScraperPage;
             m_ScraperPage.AddNavigatedHandler(OnNavigated);
             m_ScraperPage.AddNavigatingHandler(OnNavigating);
-            m_Mode = Mode;
         }
 
         abstract public string InitialURL();
@@ -61,9 +59,9 @@ namespace FreeFlow
             return new string[] { Username, Password };
         }
 
-        protected void PollForJavaScript(string TheScript, Action<string> OnDone, int Period)
+        protected void PollForJavaScript(string TheScript, Action<string> OnDone, int Period, Predicate<string> Condition = null)
         {
-            new TimedJavaScript(TheScript, OnDone, this, Period);
+            new TimedJavaScript(TheScript, OnDone, this, Period, Condition);
         }
     }
 }

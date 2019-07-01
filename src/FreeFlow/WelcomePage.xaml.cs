@@ -17,10 +17,11 @@ namespace FreeFlow
             InitializeComponent();
         }
 
-        private void OnBank(object sender, EventArgs e)
+        private async void OnBank(object sender, EventArgs e)
         {
             Banks Bank = (Banks)int.Parse((sender as Button).CommandParameter as string);
-            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Bank), ScraperMode.Connect));
+            BankScraperPage TheScraper = new BankScraperPage((App.Current as App).GetBankConnection(Bank));
+            await Navigation.PushModalAsync(TheScraper);
         }
     }
 }

@@ -15,14 +15,13 @@ namespace FreeFlow
         private int m_IDGen;
         private List<Recurrence> m_Recurrences;
         private Xact[] m_Statement;
-        private string m_RecFile;
+        private string m_AccountCode, m_RecFile, m_SnapshotFile;
 
         [DataContract]private class AccountSnapshot
         {
             public AccountSnapshot() { }
 
             [DataMember] public Xact[] Statement { get; set; }
-            [DataMember] public decimal Balance { get; set; }
             [DataMember] public DateTime When { get; set; }
         }
 
@@ -34,19 +33,18 @@ namespace FreeFlow
         {
             m_Ref = Ref;
             //Used for file naming - filename safe characters only
-            string AccountCode = string.Format("{0}-{1}",
-                Enum.GetName(typeof(Banks), Ref.Bank),
-                Ref.Code);
+            m_AccountCode = string.Format("{0}-{1}",
+                Enum.GetName(typeof(Banks), Ref.Bank), Ref.Code);
+
+            m_SnapshotFile = Path.Combine(App.LocalData, m_AccountCode + "-Snapshot.json");
 
             //Load the recurrences
-            string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             //TODO: file naming
-            m_RecFile = Path.Combine(LocalData, "rec.json");
+            m_RecFile = Path.Combine(App.LocalData, "rec.json");
             if (File.Exists(m_RecFile))
             {
                 string s = File.ReadAllText(m_RecFile);
-                using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(s)))
-                    m_Recurrences = new DataContractJsonSerializer(typeof(List<Recurrence>)).ReadObject(ms) as List<Recurrence>;
+                m_Recurrences = JSON.Parse<List<Recurrence>>(s);
                 m_IDGen = m_Recurrences.Max(r => r.ID);
             }
             else
@@ -59,6 +57,7 @@ namespace FreeFlow
             m_Statement = GetCachedXacts();
         }
 
+        //Interface for the account snapshot page
         public Xact[] Xacts()
         {
             ClearRecurrenceMatches();
@@ -226,6 +225,28 @@ namespace FreeFlow
                 EndBalance = a[i].Balance = EndBalance + a[i].Amount;
         }
 
+        #endregion
+
+        #region Interface for the scraper page
+        internal void OnDownloadedTransactions(Xact[] Xacts)
+        {
+            m_Statement = Xacts;
+            SaveSnapshot();
+            if (RecurrencesChange != null)
+                RecurrencesChange();
+        }
+
+        private void SaveSnapshot()
+        {
+            string AccountCode = string.Format("{0}-{1}-Snapshot.json",
+                Enum.GetName(typeof(Banks), Ref.Bank), Ref.Code);
+
+            JSON.Save(m_SnapshotFile, new AccountSnapshot()
+            {
+                Statement = m_Statement,
+                When = DateTime.Today
+            });
+        }
         #endregion
 
         //Capital One specific!!!

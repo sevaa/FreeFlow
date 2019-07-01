@@ -66,7 +66,7 @@ namespace FreeFlow
 
     static class JSON
     {
-        static private readonly UTF8Encoding s_Encoding = new UTF8Encoding(false);
+        static public readonly UTF8Encoding s_Encoding = new UTF8Encoding(false);
 
         internal static void Save<T>(string FileName, T Data)
         {
@@ -77,6 +77,14 @@ namespace FreeFlow
                 s = s_Encoding.GetString(ms.GetBuffer(), 0, (int)ms.Length);
             }
             File.WriteAllText(FileName, s);
+        }
+
+        public static T Parse<T>(string s) where T:class
+        {
+            if (s.StartsWith(")]}',\n"))
+                s = s.Substring(6);
+            using (MemoryStream ms = new MemoryStream(s_Encoding.GetBytes(s)))
+                return new DataContractJsonSerializer(typeof(T)).ReadObject(ms) as T;
         }
     }
 }

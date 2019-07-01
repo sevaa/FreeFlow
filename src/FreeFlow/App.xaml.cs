@@ -18,8 +18,9 @@ namespace FreeFlow
             [DataMember] public AccountReference[] Accounts { get; set; }
         }
 
+        public static readonly string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
         private Config m_Config;
-        public string LocalData;
         private string m_ConfigPath;
         private static readonly Dictionary<Banks, BankConnection> s_Banks = new Dictionary<Banks, BankConnection>()
         {
@@ -30,7 +31,6 @@ namespace FreeFlow
         {
             InitializeComponent();
 
-            LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             m_ConfigPath = Path.Combine(LocalData, "Config.json");
 
             if (File.Exists(m_ConfigPath))
@@ -78,10 +78,11 @@ namespace FreeFlow
             return true; //TODO
         }
 
-        internal void RegisterAccount(AccountReference Ref)
+        internal Account RegisterAccount(AccountReference Ref)
         {
             m_Config.Accounts = m_Config.Accounts.ArrayAppend(Ref);
             SaveConfig();
+            return new Account(Ref);
         }
     }
 }
