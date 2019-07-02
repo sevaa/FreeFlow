@@ -8,13 +8,17 @@
              Title="FreeFlow"
              BackgroundColor="#ffffd0">
     <ContentPage.Content>
-        <StackLayout VerticalOptions="Center" HorizontalOptions="Center">
+        <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Margin="0,0,0,5">
             <Label Text="Welcome to FreeFlow!" HorizontalOptions="Center" FontSize="Large" Margin="0,0,0,2" />
             <Label HorizontalOptions="Center">First, let's connect to your bank and download a statement.</Label>
             <Label HorizontalOptions="Center" Margin="0,0,0,4">The following banks are supported:</Label>
             
             <Button WidthRequest="180" HorizontalOptions="Center" Text="Capital One" Clicked="OnBank" CommandParameter="0" Margin="0,0,0,10"/>
-            <Button WidthRequest="180" HorizontalOptions="Center" Text="Bank of America" Clicked="OnBank" CommandParameter="1" />
+            <Button WidthRequest="180" HorizontalOptions="Center" Text="Bank of America" Clicked="OnBank" CommandParameter="1" Margin="0,0,0,10" />
+
+            <BoxView BackgroundColor="#000000" HeightRequest="2" WidthRequest="180" Margin="0,0,0,10"/>
+
+            <Button WidthRequest="180" HorizontalOptions="Center" Text="About FreeFlow..." Clicked="OnAbout" Margin="0,0,0,0"/>
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

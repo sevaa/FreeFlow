@@ -41,11 +41,10 @@ namespace FreeFlow.Bank
                     DisplayMessage("Waiting for the account list...");
                     PollForJavaScript(
                         "var f = function(){" +
-                            "if('_FF_' in window && 'o' in window._FF_)return true;" +
-                            "if(!('_FF_' in window))window._FF_ = {};" +
+                            "if('_FF_' in window) return true;" +
+                            "window._FF_ = {};" +
                             "var oopen = window.XMLHttpRequest.prototype.open;" +
                             "window.XMLHttpRequest.prototype.open = function(){" +
-                                "window._FF_.o = true;" +
                                 "if(!('_FF_url' in this) && arguments[1].substr(0, 14)=='/ease-app-web/'){" +
                                     "this._FF_url = arguments[1];" +
                                     "this.addEventListener('load', function(a){" +
@@ -59,14 +58,15 @@ namespace FreeFlow.Bank
                                 "oopen.apply(this, arguments);" +
                             "};" +
                             "return false;" +
-                        "}; f()", OnHooked, 10);
+                        "}; f()").ContinueWith(OnHooked, TaskScheduler.FromCurrentSynchronizationContext());
                 }
             }
 
             //Hooked the XHR, wait for the account list to come
-            private void OnHooked(string s)
+            private async void OnHooked(Task<string> ts)
             {
-                PollForJavaScript("window._FF_accounts", ListAccounts, 10);
+                string s = await PollForJavaScript("window._FF_accounts", 10);
+                base.ListAccounts(JSON.Parse<ScrapedAccounts>(Unwrap(s)).accounts);
             }
 
             //Navigated to the logon page - no credential saving for now.
@@ -80,40 +80,36 @@ namespace FreeFlow.Bank
                 DisplayMessage("Please sign in to your account(s).");
             }
 
-            private void ListAccounts(string s)
+            override async protected void ProceedToStatement(IScrapedAccount Acct)
             {
-                base.ListAccounts(JSON.Parse<ScrapedAccounts>(Unwrap(s)).accounts);
-            }
-
-            override protected void ProceedToStatement(IScrapedAccount Acct)
-            {
-                DisplayMessage("Waiting for "+Acct.Nickname+"...");
+                DisplayMessage("Waiting for " + Acct.Nickname + "...");
 
                 string id = (Acct as ScrapedAccount).referenceId;
-                PollForJavaScript("var f = function(){var e = document.getElementById('account-" + id + "');" +
-                    "if(e != null)e.click();"+
-                    "return e != null;}; f()", s =>
-                    {
-                        PollForJavaScript("window._FF_trans", OnTransactions, 10);
-                    });
+
+                //Wait for the account block to click on
+                await PollForJavaScript("var f = function(){var e = document.getElementById('account-" + id + "');" +
+                    "if(e != null)e.click();" +
+                    "return e != null;}; f()");
+
+                //Wait for transactions
+                string s = await PollForJavaScript("window._FF_trans");
+                ScrapedXacts Statement = JSON.Parse<ScrapedXacts>(Unwrap(s));
+                Xact[] Pending = Statement.pending == null ? new Xact[0] : Statement.pending.Select(ToXact).ToArray(),
+                    Posted = Statement.posted == null ? new Xact[0] : Statement.posted.Select(ToXact).ToArray();
+                if (Posted.Length > 0 && Pending.Length > 0)
+                    Account.RunBalanceForward(Posted[0].Balance, Pending);
+
+                m_Account.OnDownloadedTransactions(Pending.ArrayConcat(Posted));
+                Task _t = Navigation.PopModalAsync();
             }
 
+            //Passing strings via RunJS JSON-encodes them. Passing objects works fine.
             private static string Unwrap(string s)
             {
                 return JSON.Parse<Wrapper>(s).s;
             }
 
             //When the XHR hook catches the transactions REST call
-            private void OnTransactions(string s)
-            {
-                ScrapedXacts Statement = JSON.Parse<ScrapedXacts>(Unwrap(s));
-                Xact [] Pending = Statement.pending.Select(ToXact).ToArray(),
-                    Posted = Statement.posted.Select(ToXact).ToArray();
-                Account.RunBalanceForward(Posted[0].Balance, Pending);
-
-                m_Account.OnDownloadedTransactions(Pending.ArrayConcat(Posted));
-                Navigation.PopModalAsync();
-            }
 
             private Xact ToXact(ScrapedXact sx)
             {
@@ -170,7 +166,7 @@ namespace FreeFlow.Bank
                 [DataMember] public string referenceId { get; set; }
                 [DataMember] public string accountNumberTLNPI { get; set; }
 
-                public string Nickname => displayName + " (..." + accountNumberTLNPI.Substring(accountNumberTLNPI.Length - 3) + ")";
+                public string Nickname => displayName + " (…" + accountNumberTLNPI.Substring(accountNumberTLNPI.Length - 4) + ")";
                 public string AccountNumber => accountNumberTLNPI;
             }
 

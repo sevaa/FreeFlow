@@ -76,9 +76,9 @@ namespace FreeFlow
             return new string[] { Username, Password };
         }
 
-        protected void PollForJavaScript(string TheScript, Action<string> OnDone, int Period = 10, Predicate<string> Condition = null)
+        protected Task<string> PollForJavaScript(string TheScript, /*Action<string> OnDone, */int Period = 10, Predicate<string> Condition = null)
         {
-            new TimedJavaScript(TheScript, OnDone, this, Period, Condition);
+            return new TimedJavaScript(TheScript, /*OnDone, */this, Period, Condition).Task;
         }
 
         #region Account selection - assuming we land on a list of accounts page

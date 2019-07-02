@@ -6,6 +6,8 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Threading;
+using Xamarin.Forms;
 
 namespace FreeFlow
 {
@@ -88,8 +90,7 @@ namespace FreeFlow
         public void SeeMore()
         {
             m_Horizon += 30;
-            if (Change != null)
-                Change();
+            FireChange();
         }
 
         #region Recurrence editing
@@ -107,8 +108,7 @@ namespace FreeFlow
 
             m_Settings.Recurrences.Remove(Rec);
             SaveSettings();
-            if (Change != null)
-                Change();
+            FireChange();
         }
 
         private void SaveSettings()
@@ -133,13 +133,18 @@ namespace FreeFlow
             //TODO: check for dirtiness, recalculate only if changed?
 
             SaveSettings();
-            if (Change != null)
-                Change();
+            FireChange();
         }
 
         #endregion
 
         #region Recurrence implementation
+
+        private void FireChange()
+        {
+            if (Change != null)
+                Change();
+        }
 
         private void ClearRecurrenceMatches()
         {
@@ -151,7 +156,6 @@ namespace FreeFlow
             }
         }
 
-        //TODO: mark xacts in the statement as instances of the recurrence
         //Also work before the recurrence setup - not sure
         private Xact[] ApplyRecurrences(Xact[] Xacts, TimeSpan LookForward)
         {
@@ -164,7 +168,7 @@ namespace FreeFlow
                     ApplyRecurrence(Rec, Projections, ref OrdGen, LookForward);
 
                 Xact[] aProjections = Projections.ToArray();
-                Array.Sort(aProjections, Xact.Compare);
+                Array.Sort(aProjections, Xact.Compare); //By date descennding, then deposits before withdrawals
                 RunBalanceForward(Xacts[0].Balance, aProjections);
                 return aProjections.ArrayConcat<Xact>(Xacts);
             }
@@ -172,6 +176,7 @@ namespace FreeFlow
                 return Xacts;
         }
 
+        //Both create projected transactions and mark existing transactions as recurrence instances
         private void ApplyRecurrence(Recurrence Rec, List<Xact> Projections, ref int OrdGen, TimeSpan LookForward)
         {
             DateTime EndDate = m_Statement[0].When;
@@ -182,13 +187,14 @@ namespace FreeFlow
             int i = 0;
             DateTime dt;
             Xact MatchInStatement;
-            for (dt = Rec.StartDate; dt < EndOfFuture; dt = GetScheduledDate(Rec, i++))
+            for (dt = Rec.StartDate; dt < EndOfFuture; dt = GetScheduledDate(Rec, i))
             {
                 if ((MatchInStatement = FindMatchInStatement(Rec, dt, Tolerance)) != null)
                 {
                     MatchInStatement.IsRecurring = true;
                     MatchInStatement.RecurrenceID = Rec.ID;
                     MatchInStatement.Nickname = Rec.Nickname;
+                    MatchInStatement.RecurrenceDelta = i;
                 }
                 else if (dt >= EndDateWithTolerance)
                 {
@@ -200,10 +206,12 @@ namespace FreeFlow
                         IsProjected = true,
                         IsRecurring = true,
                         RecurrenceID = Rec.ID,
+                        RecurrenceDelta = i,
                         Ordinal = OrdGen++,
                         Nickname = Rec.Nickname
                     });
                 }
+                ++i;
             }
 
             //Off chance that we have to run the schedule back
@@ -216,6 +224,7 @@ namespace FreeFlow
                         MatchInStatement.IsRecurring = true;
                         MatchInStatement.RecurrenceID = Rec.ID;
                         MatchInStatement.Nickname = Rec.Nickname;
+                        MatchInStatement.RecurrenceDelta = i;
                     }
             }
         }
@@ -260,8 +269,7 @@ namespace FreeFlow
         {
             m_Statement = Xacts;
             SaveSnapshot();
-            if (Change != null)
-                Change();
+            FireChange();
         }
 
         private void SaveSnapshot()

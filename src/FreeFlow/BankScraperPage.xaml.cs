@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
@@ -42,12 +43,15 @@ namespace FreeFlow
 
         public void DisplayMessage(string s)
         {
-            lMessage.Text = s;
+            //if (Thread.CurrentThread.IsBackground)
+                //Device.BeginInvokeOnMainThread(() => lMessage.Text = s);
+            //else
+                lMessage.Text = s;
         }
 
         public void MessageOff()
         {
-            lMessage.Text = string.Empty;
+            DisplayMessage(string.Empty);
         }
 
         private async void OnDebug(object sender, EventArgs e)

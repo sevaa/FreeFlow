@@ -32,5 +32,10 @@ namespace FreeFlow
             Task t = Navigation.PushAsync(new AccountPage(NewAcct));
             Navigation.RemovePage(this);
         }
+
+        private void OnAbout(object sender, EventArgs e)
+        {
+            Task t = Navigation.PushModalAsync(new AboutPage(), true);
+        }
     }
 }

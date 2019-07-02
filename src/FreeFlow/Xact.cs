@@ -23,6 +23,7 @@ namespace FreeFlow
 
         public int RecurrenceID;
         public string Nickname;
+        public int RecurrenceDelta;
 
         //Date - new above old, deposits above withdrawals, then retain the source order
         public static int Compare(Xact l, Xact r)

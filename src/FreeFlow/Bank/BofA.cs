@@ -41,22 +41,20 @@ namespace FreeFlow.Bank
                 base.ListAccounts(ScrapedAccounts);
             }
 
-            protected override void ProceedToStatement(IScrapedAccount Acct)
+            protected override async void ProceedToStatement(IScrapedAccount Acct)
             {
                 ScrapedAccount sa = Acct as ScrapedAccount;
                 m_ScraperPage.BrowseTo(sa.url + "&" + sa.additionalParam);
-                PollForJavaScript("document.getElementsByClassName('transaction-records').length > 0", OnTransactions);
-            }
+                //Wait for the transaction list to become available
+                await PollForJavaScript("document.getElementsByClassName('transaction-records').length > 0");
 
-            private async void OnTransactions(string _)
-            {
                 string s = await RunJS("[].slice.call(document.getElementsByClassName('transaction-records').item(0).rows)" +
                     ".filter(function(r){return r.id;})" +
                     ".map(function(r){return {" +
                         "When: r.cells[0].innerText.substr(0, 10) == 'Processing' ? '' : r.cells[0].getElementsByTagName('span').item(1).innerText," +
                         "Desc: r.cells[1].getElementsByClassName('transTitleForEditDesc').length > 0 ? r.cells[1].getElementsByClassName('transTitleForEditDesc').item(0).innerText : r.cells[1].innerText," +
                         "Amount: r.cells[4].innerText," +
-                        "Balance: r.cells[5].innerText"+
+                        "Balance: r.cells[5].innerText" +
                     "};})");
 
                 ScrapedXact[] Statement = JSON.Parse<List<ScrapedXact>>(s).ToArray();

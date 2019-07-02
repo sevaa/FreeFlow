@@ -16,10 +16,11 @@
                VerticalOptions="Center">
             <StackLayout>
                 <Label>Select an account:</Label>
-                <ListView ItemSelected="OnSel" x:Name="TheList" HorizontalOptions="Fill">
+                <ListView ItemSelected="OnSel" x:Name="TheList" HorizontalOptions="Fill"
+                    RowHeight="35">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextCell Text="{Binding Nickname}" Height="35"/>
+                            <TextCell Text="{Binding Nickname}" />
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
