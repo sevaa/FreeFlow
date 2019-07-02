@@ -4,7 +4,10 @@
              x:Class="FreeFlow.BankScraperPage"
              BackgroundColor="#ffffd0">
     <StackLayout>
-        <Label x:Name="lMessage" IsVisible="false" FontAttributes="Bold" HorizontalOptions="StartAndExpand"/>
+        <StackLayout Orientation="Horizontal">
+            <Label x:Name="lMessage" FontAttributes="Bold" HorizontalOptions="StartAndExpand" VerticalOptions="Center" Margin="3,2,0,2"/>
+            <Button Text="Cancel" VerticalOptions="End" Clicked="OnCancel"/>
+        </StackLayout>
         <WebView
             x:Name="TheWeb"  
             HorizontalOptions="FillAndExpand"

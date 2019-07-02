@@ -19,7 +19,7 @@ namespace FreeFlow
 
         private void OnBank(object sender, EventArgs e)
         {
-            App TheApp = App.Current as App;
+            App TheApp = App.The;
             Banks Bank = (Banks)int.Parse((sender as Button).CommandParameter as string);
             BankScraperPage TheScraper = new BankScraperPage(TheApp.GetBankConnection(Bank));
             Task t = Navigation.PushModalAsync(TheScraper);
@@ -28,6 +28,7 @@ namespace FreeFlow
 
         private void OnConnected(Account NewAcct)
         {
+            App.The.AccountRegistered -= OnConnected;
             Task t = Navigation.PushAsync(new AccountPage(NewAcct));
             Navigation.RemovePage(this);
         }

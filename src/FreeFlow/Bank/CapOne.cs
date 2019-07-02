@@ -37,9 +37,11 @@ namespace FreeFlow.Bank
                 base.OnNavigating(sender, e);
 
                 if (e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
+                {
+                    DisplayMessage("Waiting for the account list...");
                     PollForJavaScript(
                         "var f = function(){" +
-                            "if('_FF_' in window && 'o' in window._FF_)return true;"+
+                            "if('_FF_' in window && 'o' in window._FF_)return true;" +
                             "if(!('_FF_' in window))window._FF_ = {};" +
                             "var oopen = window.XMLHttpRequest.prototype.open;" +
                             "window.XMLHttpRequest.prototype.open = function(){" +
@@ -49,15 +51,16 @@ namespace FreeFlow.Bank
                                     "this.addEventListener('load', function(a){" +
                                         "var url = this._FF_url;" +
                                         "if(url.substr(0, 33) == '/ease-app-web/edge/Bank/accounts/' && url.substr(url.length - 13) == '/transactions')" +
-                                            "window._FF_trans = this.responseText;" +
+                                            "window._FF_trans = {s: this.responseText};" +
                                         "else if(url == '/ease-app-web/customer/accountsummary')" +
-                                            "window._FF_accounts = this.responseText;" +
-                                    "});"+
+                                            "window._FF_accounts = {s: this.responseText};" +
+                                    "});" +
                                 "}" +
                                 "oopen.apply(this, arguments);" +
-                            "};"+
+                            "};" +
                             "return false;" +
                         "}; f()", OnHooked, 10);
+                }
             }
 
             //Hooked the XHR, wait for the account list to come
@@ -67,24 +70,25 @@ namespace FreeFlow.Bank
             }
 
             //Navigated to the logon page - no credential saving for now.
-            private async void Login()
+            private void Login()
             {
+                /*
                 string[] Credentials = await GetCredentials();
                 if (!string.IsNullOrEmpty(Credentials[0]) && !string.IsNullOrEmpty(Credentials[1]))
                     RunJS("new function(){var e = document.getElementById(\"no-acct-uid\"); e.value=\"" + JSEncode(Credentials[0]) + "\"; var evt = new Event(\"change\"); e.dispatchEvent(evt); e = document.getElementById(\"no-acct-pw\"); e.value=\"" + JSEncode(Credentials[1]) + "\"; evt = new Event(\"change\"); e.dispatchEvent(evt);document.getElementById(\"no-acct-submit\").click();}()").Start();
-                else if ((App.Current as App).ManualLogin(m_Bank))
-                    m_ScraperPage.DisplayMessage("Please sign in to your account(s).");
+                */
+                DisplayMessage("Please sign in to your account(s).");
             }
 
             private void ListAccounts(string s)
             {
-                //There's a double-json bug somewhere in there...
-                s = s.Replace("\\n", "\n").Replace("\\\"", "\"");
-                base.ListAccounts(JSON.Parse<ScrapedAccounts>(s).accounts);
+                base.ListAccounts(JSON.Parse<ScrapedAccounts>(Unwrap(s)).accounts);
             }
 
             override protected void ProceedToStatement(IScrapedAccount Acct)
             {
+                DisplayMessage("Waiting for "+Acct.Nickname+"...");
+
                 string id = (Acct as ScrapedAccount).referenceId;
                 PollForJavaScript("var f = function(){var e = document.getElementById('account-" + id + "');" +
                     "if(e != null)e.click();"+
@@ -94,61 +98,15 @@ namespace FreeFlow.Bank
                     });
             }
 
-            #region Capital One REST API data elements
-
-            [DataContract] class ScrapedXact
+            private static string Unwrap(string s)
             {
-                public ScrapedXact() { }
-
-                [DataContract] public class Overview
-                {
-                    public Overview() { }
-                    [DataMember] public string transactionDate { get; set; }
-                    [DataMember] public string transactionTitle { get; set; }
-                    [DataMember] public decimal accountBalance { get; set; }
-                }
-
-                [DataMember] public string statementDescription { get; set; }
-                [DataMember] public decimal transactionTotalAmount { get; set; }
-                [DataMember] public Overview transactionOverview { get; set; }
-                [DataMember] public string debitCardType { get; set; } //Debit, Credit
-                [DataMember] public string transactionStatus { get; set; } //pending, posted
+                return JSON.Parse<Wrapper>(s).s;
             }
-
-            [DataContract] class ScrapedXacts
-            {
-                public ScrapedXacts() { }
-
-                [DataMember] public ScrapedXact[] pending { get; set; }
-                [DataMember] public ScrapedXact [] posted { get; set; }
-            }
-
-            [DataContract]
-            class ScrapedAccount : IScrapedAccount
-            {
-                public ScrapedAccount() { }
-                [DataMember] public string displayName { get; set; }
-                [DataMember] public string referenceId { get; set; }
-                [DataMember] public string accountNumberTLNPI { get; set; }
-
-                public string Nickname => displayName + " (..." + accountNumberTLNPI.Substring(accountNumberTLNPI.Length - 3) + ")";
-                public string AccountNumber => accountNumberTLNPI;
-            }
-
-            [DataContract]
-            class ScrapedAccounts
-            {
-                public ScrapedAccounts() { }
-
-                [DataMember] public ScrapedAccount[] accounts { get; set; }
-            }
-            #endregion
 
             //When the XHR hook catches the transactions REST call
             private void OnTransactions(string s)
             {
-                s = s.Replace("\\n", "\n").Replace("\\\"", "\"");
-                ScrapedXacts Statement = JSON.Parse<ScrapedXacts>(s);
+                ScrapedXacts Statement = JSON.Parse<ScrapedXacts>(Unwrap(s));
                 Xact [] Pending = Statement.pending.Select(ToXact).ToArray(),
                     Posted = Statement.posted.Select(ToXact).ToArray();
                 Account.RunBalanceForward(Posted[0].Balance, Pending);
@@ -171,6 +129,67 @@ namespace FreeFlow.Bank
                     RecurrenceID = 0
                 };
             }
+
+            #region Capital One REST API data elements
+
+            [DataContract]
+            class ScrapedXact
+            {
+                public ScrapedXact() { }
+
+                [DataContract]
+                public class Overview
+                {
+                    public Overview() { }
+                    [DataMember] public string transactionDate { get; set; }
+                    [DataMember] public string transactionTitle { get; set; }
+                    [DataMember] public decimal accountBalance { get; set; }
+                }
+
+                [DataMember] public string statementDescription { get; set; }
+                [DataMember] public decimal transactionTotalAmount { get; set; }
+                [DataMember] public Overview transactionOverview { get; set; }
+                [DataMember] public string debitCardType { get; set; } //Debit, Credit
+                [DataMember] public string transactionStatus { get; set; } //pending, posted
+            }
+
+            [DataContract]
+            class ScrapedXacts
+            {
+                public ScrapedXacts() { }
+
+                [DataMember] public ScrapedXact[] pending { get; set; }
+                [DataMember] public ScrapedXact[] posted { get; set; }
+            }
+
+            [DataContract]
+            class ScrapedAccount : IScrapedAccount
+            {
+                public ScrapedAccount() { }
+                [DataMember] public string displayName { get; set; }
+                [DataMember] public string referenceId { get; set; }
+                [DataMember] public string accountNumberTLNPI { get; set; }
+
+                public string Nickname => displayName + " (..." + accountNumberTLNPI.Substring(accountNumberTLNPI.Length - 3) + ")";
+                public string AccountNumber => accountNumberTLNPI;
+            }
+
+            [DataContract]
+            class ScrapedAccounts
+            {
+                public ScrapedAccounts() { }
+
+                [DataMember] public ScrapedAccount[] accounts { get; set; }
+            }
+
+            [DataContract]
+            private class Wrapper
+            {
+                public Wrapper() { }
+
+                [DataMember] public string s { get; set; }
+            }
+            #endregion
         }
 
         public override BankScraperDriver GetScraperDriver(BankScraperPage ScraperPage, Account Acct)

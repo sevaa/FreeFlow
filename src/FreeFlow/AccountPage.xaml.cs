@@ -61,11 +61,12 @@ namespace FreeFlow
 
         private void OnRefresh(object sender, EventArgs e)
         {
-            Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(m_Account.Ref.Bank), m_Account));
+            Navigation.PushModalAsync(new BankScraperPage(App.The.GetBankConnection(m_Account.Ref.Bank), m_Account));
         }
 
         private void OnAbout(object sender, EventArgs e)
         {
+            DependencyService.Get<IPlatformHelper>().Boo();
             Task t = Navigation.PushModalAsync(new AboutPage(), true);
         }
 
@@ -84,7 +85,7 @@ namespace FreeFlow
                     new AccountReference(){Nickname="Quu"}
                 }, null));
             //TODO: bank selection
-            //await Navigation.PushModalAsync(new BankScraperPage((App.Current as App).GetBankConnection(Banks.CapitalOne)));
+            //await Navigation.PushModalAsync(new BankScraperPage(App.The.GetBankConnection(Banks.CapitalOne)));
         }
     }
 }

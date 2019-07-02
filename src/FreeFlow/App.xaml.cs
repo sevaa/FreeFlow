@@ -29,6 +29,8 @@ namespace FreeFlow
 
         internal event Action<Account> AccountRegistered;
 
+        static public App The => Current as App;
+
         public App()
         {
             InitializeComponent();

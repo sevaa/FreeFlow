@@ -20,8 +20,8 @@
         <!--
         <ToolbarItem Text="Add Account" Clicked="OnAddAccount"/>
         -->
-        <ToolbarItem Text="More" Clicked="OnMore"/>
-        <ToolbarItem Text="Refresh" Clicked="OnRefresh"/>
-        <ToolbarItem Text="About" Clicked="OnAbout"/>
+        <ToolbarItem Text="More" Clicked="OnMore" x:Name="tiMore"/>
+        <ToolbarItem Text="Refresh" Clicked="OnRefresh" x:Name="tiRefresh"/>
+        <ToolbarItem Text="About" Clicked="OnAbout" x:Name="tiAbout"/>
     </ContentPage.ToolbarItems>
 </ContentPage>

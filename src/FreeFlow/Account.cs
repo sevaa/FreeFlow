@@ -21,7 +21,7 @@ namespace FreeFlow
 
         public event Action Change; //Fired for every event that changes the transaction list
 
-        #region Data file format
+        #region Data file formats
         [DataContract]private class AccountSnapshot
         {
             public AccountSnapshot() { }

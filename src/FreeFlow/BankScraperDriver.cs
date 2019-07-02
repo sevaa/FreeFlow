@@ -41,12 +41,16 @@ namespace FreeFlow
 
         protected virtual void OnNavigating(object sender, WebNavigatingEventArgs e)
         {
-            Uri u = new Uri(e.Url);
-            if(u.Host == "callback")
-            {
-                System.Diagnostics.Debug.WriteLine("~~~ JS Noti: " + e.Url);
-                e.Cancel = true;
-            }
+        }
+
+        protected void DisplayMessage(string s)
+        {
+            m_ScraperPage.DisplayMessage(s);
+        }
+
+        protected void MessageOff()
+        {
+            m_ScraperPage.MessageOff();
         }
 
         public Task<string> RunJS(string s)
@@ -83,12 +87,13 @@ namespace FreeFlow
         {
             if (ScrapedAccounts == null || ScrapedAccounts.Length == 0)
             {
-                m_ScraperPage.DisplayMessage("No accounts found, sorry. Probably app/website miscommunication, please contact support.");
+                DisplayMessage("No accounts found, sorry. Probably app/website miscommunication, please contact support.");
                 return;
             }
 
             if (m_Account == null) //The scraper is trying to connect to an account
             {
+                MessageOff();
                 if (ScrapedAccounts.Length == 1) //Exactly one
                     OnAccountSelection(ToAccountReference(ScrapedAccounts[0]));
                 else
@@ -124,7 +129,7 @@ namespace FreeFlow
             else
             {
                 IScrapedAccount TheAcct = Ref.ExtraData as IScrapedAccount;
-                m_Account = (App.Current as App).RegisterAccount(Ref);
+                m_Account = App.The.RegisterAccount(Ref);
                 ProceedToStatement(TheAcct);
             }
         }

@@ -7,5 +7,6 @@ namespace FreeFlow
     public interface IPlatformHelper
     {
         string Version { get; }
+        void Boo();
     }
 }

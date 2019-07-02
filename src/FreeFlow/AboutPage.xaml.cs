@@ -32,5 +32,10 @@ namespace FreeFlow
         {
             Navigation.PopModalAsync();
         }
+
+        private void OnSources(object sender, EventArgs e)
+        {
+            Device.OpenUri(new Uri("https://github.com/sevaa/FreeFlow/"));
+        }
     }
 }

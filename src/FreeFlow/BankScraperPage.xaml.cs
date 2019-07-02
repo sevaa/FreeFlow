@@ -43,12 +43,11 @@ namespace FreeFlow
         public void DisplayMessage(string s)
         {
             lMessage.Text = s;
-            lMessage.IsVisible = true;
         }
 
         public void MessageOff()
         {
-            lMessage.IsVisible = false;
+            lMessage.Text = string.Empty;
         }
 
         private async void OnDebug(object sender, EventArgs e)
@@ -56,6 +55,11 @@ namespace FreeFlow
             string s = "window._FF_";
             string r = await RunJS(s);
             System.Diagnostics.Debug.WriteLine(r);
+        }
+
+        private void OnCancel(object sender, EventArgs e)
+        {
+            Task t = Navigation.PopModalAsync();
         }
     }
 }

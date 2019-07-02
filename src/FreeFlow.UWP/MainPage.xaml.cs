@@ -20,13 +20,8 @@ namespace FreeFlow.UWP
         public MainPage()
         {
             this.InitializeComponent();
-
             LoadApplication(new FreeFlow.App());
         }
 
-        private void OnRefresh(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

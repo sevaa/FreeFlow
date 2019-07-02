@@ -11,5 +11,8 @@ namespace FreeFlow.UWP
         public PlatformHelper() { }
 
         public string Version => App.Version;
+
+        public void Boo()
+        { }
     }
 }
