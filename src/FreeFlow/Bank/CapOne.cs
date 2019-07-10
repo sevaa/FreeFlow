@@ -29,7 +29,7 @@ namespace FreeFlow.Bank
                 if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://www.capitalone.com/?id=bank&bank=ccb"))
                     Login();
                 else if (e.Result == WebNavigationResult.Success && e.Url.Equals("https://myaccounts.capitalone.com/#/welcome"))
-                    m_ScraperPage.MessageOff();
+                    DisplayMessage("Warming up the engines...");
             }
 
             protected override void OnNavigating(object sender, WebNavigatingEventArgs e)

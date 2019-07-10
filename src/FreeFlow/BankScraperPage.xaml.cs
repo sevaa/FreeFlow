@@ -14,6 +14,8 @@ namespace FreeFlow
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class BankScraperPage : ContentPage
     {
+        //TODO: veil
+
         internal BankScraperPage(BankConnection BankConn, Account Acct = null)
         {
             InitializeComponent();
